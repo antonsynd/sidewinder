@@ -1,2 +1,3 @@
 # sidewinder
-A Pythonic language that compiles to WASM via LLVM IR
+
+Sidewinder is a statically-typed Pythonic language that targets LLVM IR.

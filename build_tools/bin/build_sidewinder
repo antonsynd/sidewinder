@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+import argparse
+import subprocess
+import sys
+
+from pathlib import Path
+from typing import Sequence
+
+PYTHON_SRC_DIR: Path = Path(__file__).parent.parent.parent / "src"
+PYTHON_TEST_DIR: Path = Path(__file__).parent.parent.parent / "test"
+
+
+def main() -> None:
+    parser: argparse.ArgumentParser = create_parser()
+    args, rest = parser.parse_known_args()
+
+    command: str = args.command
+
+    if command == "build":
+        build(args=args, rest=rest)
+    elif command == "clean":
+        clean(args=args, rest=rest)
+    elif command == "install":
+        install(args=args, rest=rest)
+    elif command == "format":
+        format(args=args, rest=rest)
+    elif command == "release":
+        format(args=args, rest=rest)
+        build(args=args, rest=rest)
+        test(args=args, rest=rest)
+        install(args=args, rest=rest)
+    elif command == "test":
+        test(args=args, rest=rest)
+    elif command == "help":
+        parser.print_help()
+    else:
+        print(f'Unknown command "{command}"', file=sys.stderr)
+
+
+def create_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="")
+    subparsers = parser.add_subparsers(dest="command")
+
+    build_parser = subparsers.add_parser("build")
+    clean_parser = subparsers.add_parser("clean")
+    install_parser = subparsers.add_parser("install")
+    format_parser = subparsers.add_parser("format")
+    release_parser = subparsers.add_parser("release")
+    test_parser = subparsers.add_parser("test")
+    help_parser = subparsers.add_parser("help")
+
+    return parser
+
+
+def build(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    try:
+        pass
+    except subprocess.CalledProcessError as e:
+        print(f"Encountered error {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def clean(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    pass
+
+
+def install(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    pass
+
+
+def format(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    try:
+        subprocess.run(["black", str(PYTHON_SRC_DIR), str(PYTHON_TEST_DIR)])
+    except subprocess.CalledProcessError as e:
+        print(f"Encountered error {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def test(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    try:
+        pass
+    except subprocess.CalledProcessError as e:
+        print(f"Encountered error {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

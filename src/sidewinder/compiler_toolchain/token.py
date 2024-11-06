@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sidewinder.token_type import TokenType
+from sidewinder.compiler_toolchain.token_type import TokenType
 
 
 class Token:

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Write compiler in Python 3, then rewrite as Sidewinder, then it becomes
 # self-hosting
 
@@ -21,7 +20,7 @@ atan2(sin(0.4), cos(42))
 from io import StringIO, TextIOBase
 from typing import Optional
 
-from sidewinder.token import Token
+from sidewinder.compiler_toolchain.token import Token
 
 
 class Lexer:
@@ -57,7 +56,7 @@ class Lexer:
                 last_char = self.try_get_next_character()
 
             identifier_str: str = self._identifier_buffer.getvalue()
-            token_type: Token.Type = self.get_token_type_for_string(s=identifier_str)
+            token_type: Token.Type = Token.Type.from_str(s=identifier_str)
 
             self._identifier_buffer.truncate(0)
 
