@@ -1,8 +1,9 @@
 from typing import Sequence
+from typing import Any, Optional
 import sys
 
-from lexer import Lexer, Token
-from typing import Any, Optional
+from sidewinder.lexer import Lexer
+from sidewinder.token import Token
 
 
 class ExprAst:
@@ -10,10 +11,10 @@ class ExprAst:
 
 
 class NumberExprAst(ExprAst):
-    def __init__(self, val: float) -> None:
+    def __init__(self, value: float) -> None:
         super().__init__()
 
-        self._val: float = val
+        self._value: float = value
 
 
 class VariableExprAst(ExprAst):
@@ -64,21 +65,26 @@ class Parser:
     def parse(self) -> None:
         pass
 
-    def log_error(s: str) -> None:
-        print(s, file=sys.stderr)
+    def empty_expression(reason: str) -> None:
+        print(reason, file=sys.stderr)
         return None
 
     def get_next_token(self) -> None:
         self._current_token = self._lexer.try_get_next_token()
 
+    # number
     def parse_number_expression(self) -> ExprAst:
-        expr = NumberExprAst(val=self._lexer._num_val)
+        assert self._current_token
+        assert self._current_token.value
+
+        expr = NumberExprAst(value=float(self._current_token.value()))
 
         # Consume number and move to next token
         self.get_next_token()
 
         return expr
 
+    # '(' expression ')'
     def parse_parentheses_expression(self) -> Optional[ExprAst]:
         self.get_next_token()  # eat (
 
@@ -87,4 +93,9 @@ class Parser:
         if not v:
             return None
 
-        # if current_token !=
+        if self._current_token.value() != ")":
+            return self.empty_expression(reason="expected ')'")
+
+        self.get_next_token()  # eat )
+
+        return v
