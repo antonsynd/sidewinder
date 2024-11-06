@@ -79,7 +79,12 @@ class Parser:
 
         return expr
 
-    def parse_parentheses_expression(self) -> ExprAst:
+    def parse_parentheses_expression(self) -> Optional[ExprAst]:
         self.get_next_token()  # eat (
 
         v: Optional[Any] = self.parse_expression()
+
+        if not v:
+            return None
+
+        # if current_token !=
