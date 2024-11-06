@@ -63,7 +63,10 @@ def build(args: argparse.Namespace, rest: Sequence[str]) -> None:
 
 
 def clean(args: argparse.Namespace, rest: Sequence[str]) -> None:
-    get_logger().info("Nothing to clean!")
+    get_logger().info("Removing __pycache__ directories...")
+
+    remove_pycache_dirs(root_path=PYTHON_SRC_DIR)
+    remove_pycache_dirs(root_path=PYTHON_TEST_DIR)
 
 
 def install(args: argparse.Namespace, rest: Sequence[str]) -> None:
@@ -121,6 +124,19 @@ def setup_logger() -> None:
     # Add handlers to the logger
     _logger.addHandler(_stdout_handler)
     _logger.addHandler(_stderr_handler)
+
+
+def remove_pycache_dirs(root_path: Path):
+    # Iterate over all __pycache__ directories recursively
+    for pycache_dir in root_path.rglob("__pycache__"):
+        if pycache_dir.is_dir():
+            get_logger().info(f"Removing: {pycache_dir}")
+
+            # Remove the __pycache__ directory
+            for pycache_file in pycache_dir.iterdir():
+                pycache_file.unlink()  # Remove the file
+
+            pycache_dir.rmdir()  # Remove the directory itself
 
 
 if __name__ == "__main__":
