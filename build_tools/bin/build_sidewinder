@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 import argparse
+import logging
 import subprocess
 import sys
 
 from pathlib import Path
 from typing import Sequence
 
+_logger: logging.Logger = logging.getLogger(name="build_sidewinder")
+
+
 PYTHON_SRC_DIR: Path = Path(__file__).parent.parent.parent / "src"
 PYTHON_TEST_DIR: Path = Path(__file__).parent.parent.parent / "test"
 
 
 def main() -> None:
+    setup_logger()
+
     parser: argparse.ArgumentParser = create_parser()
     args, rest = parser.parse_known_args()
 
@@ -34,7 +40,7 @@ def main() -> None:
     elif command == "help":
         parser.print_help()
     else:
-        print(f'Unknown command "{command}"', file=sys.stderr)
+        get_logger().error(f'Unknown command "{command}"')
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -53,22 +59,20 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def build(args: argparse.Namespace, rest: Sequence[str]) -> None:
-    try:
-        pass
-    except subprocess.CalledProcessError as e:
-        print(f"Encountered error {e}", file=sys.stderr)
-        sys.exit(1)
+    get_logger().info("Nothing to build!")
 
 
 def clean(args: argparse.Namespace, rest: Sequence[str]) -> None:
-    pass
+    get_logger().info("Nothing to clean!")
 
 
 def install(args: argparse.Namespace, rest: Sequence[str]) -> None:
-    pass
+    get_logger().info("Nothing to install!")
 
 
 def format(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    get_logger().info("Formatting with black...")
+
     try:
         subprocess.run(["black", str(PYTHON_SRC_DIR), str(PYTHON_TEST_DIR)])
     except subprocess.CalledProcessError as e:
@@ -77,11 +81,46 @@ def format(args: argparse.Namespace, rest: Sequence[str]) -> None:
 
 
 def test(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    get_logger().info("Running tests with pytest...")
+
     try:
-        pass
+        subprocess.run(["pytest", str(PYTHON_TEST_DIR), *rest])
     except subprocess.CalledProcessError as e:
-        print(f"Encountered error {e}", file=sys.stderr)
+        get_logger().error(f"Encountered error {e}")
         sys.exit(1)
+
+
+def get_logger() -> logging.Logger:
+    global _logger
+    return _logger
+
+
+def setup_logger() -> None:
+    global _logger
+
+    _logger.setLevel(logging.DEBUG)  # Set the base level to the lowest level you want to capture
+
+    # Handler for stdout (INFO and DEBUG)
+    _stdout_handler = logging.StreamHandler(sys.stdout)
+    _stdout_handler.setLevel(logging.DEBUG)
+    _stdout_handler.addFilter(
+        lambda record: record.levelno <= logging.INFO
+    )  # Filter for DEBUG and INFO
+
+    # Handler for stderr (WARNING and ERROR)
+    _stderr_handler = logging.StreamHandler(sys.stderr)
+    _stderr_handler.setLevel(logging.WARNING)
+    _stderr_handler.addFilter(
+        lambda record: record.levelno >= logging.WARNING
+    )  # Filter for WARNING and ERROR
+
+    _formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    _stdout_handler.setFormatter(_formatter)
+    _stderr_handler.setFormatter(_formatter)
+
+    # Add handlers to the logger
+    _logger.addHandler(_stdout_handler)
+    _logger.addHandler(_stderr_handler)
 
 
 if __name__ == "__main__":
