@@ -4,7 +4,6 @@ from io import StringIO
 from pathlib import Path
 
 from sidewinder.compiler_toolchain.lexer import Lexer
-from sidewinder.compiler_toolchain.token import Token
 from sidewinder.compiler_toolchain.parser import Parser
 
 

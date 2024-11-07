@@ -1,8 +1,6 @@
 import sys
 from typing import Mapping, Optional, Sequence
 
-from sidewinder.compiler_toolchain.lexer import Lexer
-from sidewinder.compiler_toolchain.token import Token
 from sidewinder.compiler_toolchain.ast import (
     BinaryExprAst,
     CallExprAst,
@@ -12,7 +10,8 @@ from sidewinder.compiler_toolchain.ast import (
     PrototypeAst,
     VariableExprAst,
 )
-
+from sidewinder.compiler_toolchain.lexer import Lexer
+from sidewinder.compiler_toolchain.token import Token
 
 _binary_op_precedence_map: Mapping[str, int] = {
     "<": 10,

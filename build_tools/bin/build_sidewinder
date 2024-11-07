@@ -78,10 +78,25 @@ def install(args: argparse.Namespace, rest: Sequence[str]) -> None:
 
 
 def format(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    format_with_isort()
+    format_with_black()
+
+
+def format_with_black() -> None:
     get_logger().info("Formatting with black...")
 
     try:
         subprocess.run(["black", str(PYTHON_SRC_DIR), str(PYTHON_TEST_DIR)])
+    except subprocess.CalledProcessError as e:
+        print(f"Encountered error {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def format_with_isort() -> None:
+    get_logger().info("Formatting with isort...")
+
+    try:
+        subprocess.run(["isort", str(PYTHON_SRC_DIR), str(PYTHON_TEST_DIR)])
     except subprocess.CalledProcessError as e:
         print(f"Encountered error {e}", file=sys.stderr)
         sys.exit(1)
