@@ -4,6 +4,7 @@ from typing import Mapping
 
 class TokenType(Enum):
     EOF = auto()
+    UNK = auto()
 
     # Commands
     DEF = auto()
@@ -68,7 +69,6 @@ class TokenType(Enum):
     AND = auto()
     OR = auto()
     NOT = auto()
-    CARET = auto()
     MODULUS = auto()
     EQUAL = auto()
     LESS_THAN = auto()

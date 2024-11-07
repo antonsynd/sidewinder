@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import logging
+import os
 import subprocess
 import sys
 
 from pathlib import Path
-from typing import Sequence
+from typing import Mapping, Sequence
 
 _logger: logging.Logger = logging.getLogger(name="build_sidewinder")
 
@@ -35,6 +36,8 @@ def main() -> None:
         build(args=args, rest=rest)
         test(args=args, rest=rest)
         install(args=args, rest=rest)
+    elif command == "run":
+        run(args=args, rest=rest)
     elif command == "test":
         test(args=args, rest=rest)
     elif command == "help":
@@ -52,6 +55,7 @@ def create_parser() -> argparse.ArgumentParser:
     install_parser = subparsers.add_parser("install")
     format_parser = subparsers.add_parser("format")
     release_parser = subparsers.add_parser("release")
+    run_parser = subparsers.add_parser("run")
     test_parser = subparsers.add_parser("test")
     help_parser = subparsers.add_parser("help")
 
@@ -80,6 +84,20 @@ def format(args: argparse.Namespace, rest: Sequence[str]) -> None:
         subprocess.run(["black", str(PYTHON_SRC_DIR), str(PYTHON_TEST_DIR)])
     except subprocess.CalledProcessError as e:
         print(f"Encountered error {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def run(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    get_logger().info("Running custom command...")
+
+    run_env: Mapping[str, str] = os.environ.copy()
+    existing_python_path: str = run_env.get("PYTHONPATH", "")
+    run_env["PYTHONPATH"] = f"{existing_python_path}:{PYTHON_SRC_DIR}"
+
+    try:
+        subprocess.run(rest, env=run_env)
+    except subprocess.CalledProcessError as e:
+        get_logger().error(f"Encountered error {e}")
         sys.exit(1)
 
 

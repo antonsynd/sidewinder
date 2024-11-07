@@ -15,3 +15,7 @@ class Token:
 
     def value(self) -> Optional[str]:
         return self._value
+
+    def __str__(self) -> str:
+        str_value: str = f"'{self._value}'" if self._value else "None"
+        return f"Token(type = {self._token_type.name}, value = {str_value})"
