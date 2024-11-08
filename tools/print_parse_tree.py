@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 import antlr4.tree.Tree
+from antlr4 import ParserRuleContext
 from graphviz import Digraph
 from PythonParser import PythonParser
 
@@ -22,7 +23,7 @@ def main() -> None:
     parser: PythonParser = antlr_builder._create_parser(input=input_buffer)
     parse_tree: FileInputContext = parser.file_input()
 
-    dot: Digraph = antlr_tree_to_dot(tree=parse_tree)
+    dot: Digraph = antlr_tree_to_dot(tree=parse_tree, parser=parser)
     dot.render(outfile=output_path, format="png")
 
 
@@ -34,17 +35,27 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def antlr_tree_to_dot(tree: FileInputContext, dot: Optional[Digraph] = None):
+def antlr_tree_to_dot(tree: FileInputContext, parser: PythonParser, dot: Optional[Digraph] = None):
     if not dot:
         dot = Digraph()
 
+    label: str = tree.getText()
+    if not label:
+        label = "<empty>"
+
+    if isinstance(tree, ParserRuleContext):
+        rule_index: int = tree.getRuleIndex()
+        rule_name: str = parser.ruleNames[rule_index] if rule_index >= 0 else "<unknown_rule>"
+        label += f"\nRule: {rule_name}"
+
     if isinstance(tree, antlr4.tree.Tree.TerminalNodeImpl):
-        dot.node(str(id(tree)), tree.getText())
+        dot.node(name=str(id(tree)), label=label)
     else:
-        dot.node(str(id(tree)), tree.getText())
+        dot.node(name=str(id(tree)), label=label)
+
         for child in tree.getChildren():
-            dot.edge(str(id(tree)), str(id(child)))
-            antlr_tree_to_dot(child, dot)
+            dot.edge(tail_name=str(id(tree)), head_name=str(id(child)))
+            antlr_tree_to_dot(tree=child, parser=parser, dot=dot)
 
     return dot
 
