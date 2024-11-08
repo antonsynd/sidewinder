@@ -16,6 +16,7 @@ _logger: logging.Logger = logging.getLogger(name="build_sidewinder")
 ROOT_DIR: Path = Path(__file__).parent.parent.parent
 PYTHON_SRC_DIR: Path = ROOT_DIR / "src"
 PYTHON_TEST_DIR: Path = ROOT_DIR / "test"
+PYTHON_TOOLS_DIR: Path = ROOT_DIR / "tools"
 PYTHON_DATA_DIR: Path = ROOT_DIR / "data"
 PYTHON_RESOURCE_DIR: Path = ROOT_DIR / "__resources"
 
@@ -191,7 +192,7 @@ def format_with_black() -> None:
     get_logger().info("Formatting with black...")
 
     try:
-        subprocess.run(["black", str(PYTHON_SRC_DIR), str(PYTHON_TEST_DIR)])
+        subprocess.run(["black", str(PYTHON_SRC_DIR), str(PYTHON_TEST_DIR), str(PYTHON_TOOLS_DIR)])
     except subprocess.CalledProcessError as e:
         print(f"Encountered error {e}", file=sys.stderr)
         sys.exit(1)
@@ -201,7 +202,7 @@ def format_with_isort() -> None:
     get_logger().info("Formatting with isort...")
 
     try:
-        subprocess.run(["isort", str(PYTHON_SRC_DIR), str(PYTHON_TEST_DIR)])
+        subprocess.run(["isort", str(PYTHON_SRC_DIR), str(PYTHON_TEST_DIR), str(PYTHON_TOOLS_DIR)])
     except subprocess.CalledProcessError as e:
         print(f"Encountered error {e}", file=sys.stderr)
         sys.exit(1)

@@ -1,5 +1,7 @@
 # Custom package files and dirs
 __resources/
+*.png
+*.gv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
