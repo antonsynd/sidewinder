@@ -1,14 +1,13 @@
 from io import TextIOBase
 from typing import MutableSequence, Optional
 
-from sidewinder.compiler_toolchain.ast import ASTNode
-from sidewinder.compiler_toolchain.ast_builder import ASTBuilderBase
-
 from antlr4 import CommonTokenStream, InputStream, ParseTreeWalker
 from PythonLexer import PythonLexer
 from PythonParser import PythonParser
 from PythonParserListener import PythonParserListener
 
+from sidewinder.compiler_toolchain.ast import ASTNode
+from sidewinder.compiler_toolchain.ast_builder import ASTBuilderBase
 
 FileInputContext = PythonParser.File_inputContext
 
