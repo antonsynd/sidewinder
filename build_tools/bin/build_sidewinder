@@ -17,7 +17,7 @@ ROOT_DIR: Path = Path(__file__).parent.parent.parent
 PYTHON_SRC_DIR: Path = ROOT_DIR / "src"
 PYTHON_TEST_DIR: Path = ROOT_DIR / "test"
 PYTHON_DATA_DIR: Path = ROOT_DIR / "data"
-PYTHON_RESOURCE_DIR: Path = ROOT_DIR / ".sidewinder_resources"
+PYTHON_RESOURCE_DIR: Path = ROOT_DIR / "__resources"
 
 
 def main() -> None:
@@ -83,14 +83,22 @@ def setup(args: argparse.Namespace, rest: Sequence[str]) -> None:
     try:
         get_logger().info("Downloading resources...")
         download_files_from_jsons(
-            specs=[PYTHON_DATA_DIR / "python3_lexer.json", PYTHON_DATA_DIR / "python3_parser.json"],
+            specs=[
+                PYTHON_DATA_DIR / "python3_lexer.json",
+                PYTHON_DATA_DIR / "python3_parser.json",
+                PYTHON_DATA_DIR / "python3_transform_grammar.json",
+            ],
             target_dir=PYTHON_RESOURCE_DIR,
         )
 
         os.chdir(PYTHON_RESOURCE_DIR)
 
+        get_logger().info("Fixing grammar...")
+        subprocess.run([sys.executable, str(PYTHON_RESOURCE_DIR / "transformGrammar.py")])
+
         get_logger().info("Generating lexer...")
         subprocess.run(["antlr", "-Dlanguage=Python3", str(PYTHON_RESOURCE_DIR / "PythonLexer.g4")])
+
         get_logger().info("Generating parser...")
         subprocess.run(
             ["antlr", "-Dlanguage=Python3", str(PYTHON_RESOURCE_DIR / "PythonParser.g4")]
@@ -112,6 +120,7 @@ def check_for_expected_resources() -> None:
     expected_files: Sequence[Path] = [
         PYTHON_RESOURCE_DIR / "PythonLexer.g4",
         PYTHON_RESOURCE_DIR / "PythonParser.g4",
+        PYTHON_RESOURCE_DIR / "transformGrammar.py",
     ]
 
     missing_files: Sequence[Path] = []
