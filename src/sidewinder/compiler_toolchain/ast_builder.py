@@ -7,5 +7,5 @@ class ASTBuilderBase:
     def __init__(self):
         pass
 
-    def generate_ast(input: TextIOBase) -> ASTNode:
+    def generate_ast(self, input: TextIOBase) -> ASTNode:
         raise NotImplementedError()

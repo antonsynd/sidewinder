@@ -34,7 +34,7 @@ class AntlrASTBuilder(ASTBuilderBase):
     def __init__(self):
         super().__init__()
 
-    def generate_ast(input: TextIOBase) -> ASTNode:
+    def generate_ast(self, input: TextIOBase) -> ASTNode:
         stream = InputStream(data=input.read())
         lexer = PythonLexer(input=stream)
         token_stream = CommonTokenStream(lexer=lexer)
