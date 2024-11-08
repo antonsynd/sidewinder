@@ -2,13 +2,13 @@ import sys
 from typing import Mapping, Optional, Sequence
 
 from sidewinder.compiler_toolchain.ast import (
-    BinaryExprAst,
-    CallExprAst,
-    ExprAst,
-    FunctionAst,
-    NumberExprAst,
-    PrototypeAst,
-    VariableExprAst,
+    BinaryExprAST,
+    CallExprAST,
+    ExprAST,
+    FunctionAST,
+    NumberExprAST,
+    PrototypeAST,
+    VariableExprAST,
 )
 from sidewinder.compiler_toolchain.lexer import Lexer
 from sidewinder.compiler_toolchain.token import Token
@@ -51,7 +51,7 @@ class Parser:
             print("ready> ", file=sys.stderr)
 
     def handle_definition(self) -> None:
-        expr: Optional[ExprAst] = self.parse_definition()
+        expr: Optional[ExprAST] = self.parse_definition()
 
         if expr:
             print("Parsed a function definition:", file=sys.stderr)
@@ -61,7 +61,7 @@ class Parser:
         self.get_next_token()
 
     def handle_extern(self) -> None:
-        expr: Optional[ExprAst] = self.parse_extern()
+        expr: Optional[ExprAST] = self.parse_extern()
 
         if expr:
             print("Parsed an extern:", file=sys.stderr)
@@ -71,7 +71,7 @@ class Parser:
         self.get_next_token()
 
     def handle_top_level_expression(self) -> None:
-        expr: Optional[ExprAst] = self.parse_top_level_expression()
+        expr: Optional[ExprAST] = self.parse_top_level_expression()
 
         if expr:
             print("Parsed a top-level expression:", file=sys.stderr)
@@ -90,11 +90,11 @@ class Parser:
         print(f"next> {self._current_token}")
 
     # number
-    def parse_number_expression(self) -> ExprAst:
+    def parse_number_expression(self) -> ExprAST:
         assert self._current_token
         assert self._current_token.value()
 
-        expr = NumberExprAst(value=float(self._current_token.value()))
+        expr = NumberExprAST(value=float(self._current_token.value()))
 
         # Consume number and move to next token
         self.get_next_token()
@@ -102,10 +102,10 @@ class Parser:
         return expr
 
     # '(' expression ')'
-    def parse_parentheses_expression(self) -> Optional[ExprAst]:
+    def parse_parentheses_expression(self) -> Optional[ExprAST]:
         self.get_next_token()  # eat (
 
-        v: Optional[ExprAst] = self.parse_expression()
+        v: Optional[ExprAST] = self.parse_expression()
 
         if not v:
             return None
@@ -117,7 +117,7 @@ class Parser:
 
         return v
 
-    def parse_identifier_expression(self) -> Optional[ExprAst]:
+    def parse_identifier_expression(self) -> Optional[ExprAST]:
         assert self._current_token
         assert self._current_token.value()
 
@@ -127,15 +127,15 @@ class Parser:
 
         # Simple variable
         if self._current_token.value() != "(":
-            return VariableExprAst(name=identifier)
+            return VariableExprAST(name=identifier)
 
         # Function call
         self.get_next_token()
 
-        args: Sequence[ExprAst] = []
+        args: Sequence[ExprAST] = []
         if self._current_token.value() != ")":
             while True:
-                arg: Optional[ExprAst] = self.parse_expression()
+                arg: Optional[ExprAST] = self.parse_expression()
 
                 if not arg:
                     return self.empty_expression(reason="")
@@ -152,9 +152,9 @@ class Parser:
 
             self.get_next_token()  # eat )
 
-        return CallExprAst(callee=identifier, args=args)
+        return CallExprAST(callee=identifier, args=args)
 
-    def parse_primary(self) -> Optional[ExprAst]:
+    def parse_primary(self) -> Optional[ExprAST]:
         if not self._current_token:
             return None
 
@@ -170,15 +170,15 @@ class Parser:
 
         return self.empty_expression(reason="unknown token when expecting an expression")
 
-    def parse_expression(self) -> Optional[ExprAst]:
-        lhs: Optional[ExprAst] = self.parse_primary()
+    def parse_expression(self) -> Optional[ExprAST]:
+        lhs: Optional[ExprAST] = self.parse_primary()
 
         if not lhs:
             return None
 
         return self.parse_binary_op_rhs(expression_precedence=0, lhs=lhs)
 
-    def parse_binary_op_rhs(self, expression_precedence: int, lhs: ExprAst) -> Optional[ExprAst]:
+    def parse_binary_op_rhs(self, expression_precedence: int, lhs: ExprAST) -> Optional[ExprAST]:
         while True:
             token_precedence: int = self.get_token_precedence(token=self._current_token)
 
@@ -191,7 +191,7 @@ class Parser:
             self.get_next_token()  # eat the current token
 
             # Parse expression after binary operator
-            rhs: Optional[ExprAst] = self.parse_primary()
+            rhs: Optional[ExprAST] = self.parse_primary()
 
             if not rhs:
                 return None
@@ -205,7 +205,7 @@ class Parser:
                     return None
 
             # Merge LHS/RHS
-            lhs = BinaryExprAst(op=binary_op_token.value(), lhs=lhs, rhs=rhs)
+            lhs = BinaryExprAST(op=binary_op_token.value(), lhs=lhs, rhs=rhs)
 
     def get_token_precedence(self, token: Optional[Token]) -> int:
         # -1 is the lowest precedence (or lack thereof)
@@ -215,7 +215,7 @@ class Parser:
         return _binary_op_precedence_map.get(token.value(), -1)
 
     # id '(' id* ')'
-    def parse_prototype(self) -> Optional[PrototypeAst]:
+    def parse_prototype(self) -> Optional[PrototypeAST]:
         if self._current_token.token_type() != Token.Type.IDENTIFIER:
             return self.empty_expression(
                 reason=f"Expected function name in prototype, but got token of "
@@ -249,33 +249,33 @@ class Parser:
 
         self.get_next_token()  # eat ')'
 
-        return PrototypeAst(name=fn_name, args=arg_names)
+        return PrototypeAST(name=fn_name, args=arg_names)
 
-    def parse_definition(self) -> Optional[FunctionAst]:
+    def parse_definition(self) -> Optional[FunctionAST]:
         self.get_next_token()  # consume def
 
-        proto: Optional[PrototypeAst] = self.parse_prototype()
+        proto: Optional[PrototypeAST] = self.parse_prototype()
 
         if not proto:
             return None
 
-        body: Optional[ExprAst] = self.parse_expression()
+        body: Optional[ExprAST] = self.parse_expression()
 
         if not body:
             return None
 
-        return FunctionAst(proto=proto, body=body)
+        return FunctionAST(proto=proto, body=body)
 
-    def parse_top_level_expression(self) -> Optional[FunctionAst]:
-        expr: Optional[ExprAst] = self.parse_expression()
+    def parse_top_level_expression(self) -> Optional[FunctionAST]:
+        expr: Optional[ExprAST] = self.parse_expression()
 
         if not expr:
             return None
 
         # Make an anonymous proto
-        proto = PrototypeAst(name="__anon_expr", args=[])
-        return FunctionAst(proto=proto, body=expr)
+        proto = PrototypeAST(name="__anon_expr", args=[])
+        return FunctionAST(proto=proto, body=expr)
 
-    def parse_extern(self) -> Optional[PrototypeAst]:
+    def parse_extern(self) -> Optional[PrototypeAST]:
         self.get_next_token()  # consume extern
         return self.parse_prototype()

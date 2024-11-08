@@ -1,55 +1,55 @@
 from typing import Sequence
 
 
-class ExprAst:
+class ExprAST:
     pass
 
 
-class NumberExprAst(ExprAst):
+class NumberExprAST(ExprAST):
     def __init__(self, value: float) -> None:
         super().__init__()
 
         self._value: float = value
 
     def __str__(self) -> str:
-        return f"NumberExprAst(value = {self._value})"
+        return f"NumberExprAST(value = {self._value})"
 
 
-class VariableExprAst(ExprAst):
+class VariableExprAST(ExprAST):
     def __init__(self, name: str) -> None:
         super().__init__()
 
         self._name: str = name
 
     def __str__(self) -> str:
-        return f"VariableExprAst(name = {self._name})"
+        return f"VariableExprAST(name = {self._name})"
 
 
-class BinaryExprAst(ExprAst):
-    def __init__(self, op: str, lhs: ExprAst, rhs: ExprAst) -> None:
+class BinaryExprAST(ExprAST):
+    def __init__(self, op: str, lhs: ExprAST, rhs: ExprAST) -> None:
         super().__init__()
 
         self._op: str = op
-        self._lhs: ExprAst = lhs
-        self._rhs: ExprAst = rhs
+        self._lhs: ExprAST = lhs
+        self._rhs: ExprAST = rhs
 
     def __str__(self) -> str:
-        return f"BinaryExprAst(op = '{self._op}', lhs = {self._lhs}, rhs = {self._rhs})"
+        return f"BinaryExprAST(op = '{self._op}', lhs = {self._lhs}, rhs = {self._rhs})"
 
 
-class CallExprAst(ExprAst):
-    def __init__(self, callee: str, args: Sequence[ExprAst]) -> None:
+class CallExprAST(ExprAST):
+    def __init__(self, callee: str, args: Sequence[ExprAST]) -> None:
         super().__init__()
 
         self._callee: str = callee
-        self._args: Sequence[ExprAst] = args
+        self._args: Sequence[ExprAST] = args
 
     def __str__(self) -> str:
         args_str: str = ", ".join([str(x) for x in self._args])
-        return f"CallExprAst(callee = '{self._callee}', args = [{args_str}])"
+        return f"CallExprAST(callee = '{self._callee}', args = [{args_str}])"
 
 
-class PrototypeAst:
+class PrototypeAST:
     def __init__(self, name: str, args: Sequence[str]) -> None:
         self._name: str = name
         self._args: Sequence[str] = args
@@ -59,14 +59,14 @@ class PrototypeAst:
 
     def __str__(self) -> str:
         args_str: str = ", ".join(self._args)
-        return f"PrototypeAst(name = '{self._name}', args = [{args_str}])"
+        return f"PrototypeAST(name = '{self._name}', args = [{args_str}])"
 
 
-class FunctionAst:
+class FunctionAST:
     # TODO: add return type and type of arguments
-    def __init__(self, proto: PrototypeAst, body: ExprAst) -> None:
-        self._proto: PrototypeAst = proto
-        self._body: ExprAst = body
+    def __init__(self, proto: PrototypeAST, body: ExprAST) -> None:
+        self._proto: PrototypeAST = proto
+        self._body: ExprAST = body
 
     def __str__(self) -> str:
-        return f"FunctionAst(proto = {self._proto}, body = {self._body})"
+        return f"FunctionAST(proto = {self._proto}, body = {self._body})"

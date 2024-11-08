@@ -1,3 +1,6 @@
+# Custom package files and dirs
+.sidewinder_resources/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

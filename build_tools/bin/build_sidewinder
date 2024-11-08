@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import argparse
+import hashlib
+import json
 import logging
 import os
+import requests
 import subprocess
 import sys
 
@@ -10,9 +13,11 @@ from typing import Mapping, Sequence
 
 _logger: logging.Logger = logging.getLogger(name="build_sidewinder")
 
-
-PYTHON_SRC_DIR: Path = Path(__file__).parent.parent.parent / "src"
-PYTHON_TEST_DIR: Path = Path(__file__).parent.parent.parent / "test"
+ROOT_DIR: Path = Path(__file__).parent.parent.parent
+PYTHON_SRC_DIR: Path = ROOT_DIR / "src"
+PYTHON_TEST_DIR: Path = ROOT_DIR / "test"
+PYTHON_DATA_DIR: Path = ROOT_DIR / "data"
+PYTHON_RESOURCE_DIR: Path = ROOT_DIR / ".sidewinder_resources"
 
 
 def main() -> None:
@@ -25,6 +30,8 @@ def main() -> None:
 
     if command == "build":
         build(args=args, rest=rest)
+    elif command == "setup":
+        setup(args=args, rest=rest)
     elif command == "clean":
         clean(args=args, rest=rest)
     elif command == "install":
@@ -50,6 +57,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="")
     subparsers = parser.add_subparsers(dest="command")
 
+    setup_parser = subparsers.add_parser("setup")
     build_parser = subparsers.add_parser("build")
     clean_parser = subparsers.add_parser("clean")
     install_parser = subparsers.add_parser("install")
@@ -63,7 +71,95 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def build(args: argparse.Namespace, rest: Sequence[str]) -> None:
-    get_logger().info("Nothing to build!")
+    check_for_expected_resources()
+
+
+def setup(args: argparse.Namespace, rest: Sequence[str]) -> None:
+    get_logger().info("Setting up...")
+
+    PYTHON_RESOURCE_DIR.mkdir(exist_ok=True)
+    old_cwd: Path = Path.cwd()
+
+    try:
+        get_logger().info("Downloading resources...")
+        download_files_from_jsons(
+            specs=[PYTHON_DATA_DIR / "python3_lexer.json", PYTHON_DATA_DIR / "python3_parser.json"],
+            target_dir=PYTHON_RESOURCE_DIR,
+        )
+
+        os.chdir(PYTHON_RESOURCE_DIR)
+
+        get_logger().info("Generating lexer...")
+        subprocess.run(["antlr", "-Dlanguage=Python3", str(PYTHON_RESOURCE_DIR / "PythonLexer.g4")])
+        get_logger().info("Generating parser...")
+        subprocess.run(
+            ["antlr", "-Dlanguage=Python3", str(PYTHON_RESOURCE_DIR / "PythonParser.g4")]
+        )
+
+    except subprocess.CalledProcessError as e:
+        print(f"Encountered error {e}", file=sys.stderr)
+        os.chdir(old_cwd)
+        sys.exit(1)
+
+    os.chdir(old_cwd)
+
+
+def check_for_expected_resources() -> None:
+    if not PYTHON_RESOURCE_DIR.exists():
+        print(f"Resources not generated, please run 'setup' target", file=sys.stderr)
+        sys.exit(1)
+
+    expected_files: Sequence[Path] = [
+        PYTHON_RESOURCE_DIR / "PythonLexer.g4",
+        PYTHON_RESOURCE_DIR / "PythonParser.g4",
+    ]
+
+    missing_files: Sequence[Path] = []
+
+    for file_path in expected_files:
+        if not file_path.exists() or file_path.stat().st_size == 0:
+            missing_files.append(file_path)
+
+    if missing_files:
+        print(f"Missing the following files:", file=sys.stderr)
+
+        for file_path in missing_files:
+            print(f"  {file_path}", file=sys.stderr)
+
+        print(f"Please run 'setup' target", file=sys.stderr)
+        sys.exit(1)
+
+
+def download_files_from_jsons(specs: Sequence[Path], target_dir: Path) -> None:
+    for spec in specs:
+        download_file_from_json(spec=spec, target_dir=target_dir)
+
+
+def download_file_from_json(spec: Path, target_dir: Path) -> None:
+    spec_json: Mapping[str, str] = json.loads(spec.read_text())
+    url: str = spec_json["url"]
+    dest_path: Path = target_dir / spec_json["destination"]
+    expected_checksum: str = spec_json["checksum"]
+
+    response: requests.Response = requests.get(url)
+
+    if response.status_code != 200:
+        print(
+            f"Failed to download '{url}' with status code {response.status_code}", file=sys.stderr
+        )
+        sys.exit(1)
+
+    retrieved_bytes: bytes = response.content
+    actual_checksum: str = hashlib.sha256(retrieved_bytes).hexdigest()
+
+    if expected_checksum != actual_checksum:
+        print(
+            f"Downloaded file '{url}' has checksum {actual_checksum}, but expected {expected_checksum}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    dest_path.write_bytes(retrieved_bytes)
 
 
 def clean(args: argparse.Namespace, rest: Sequence[str]) -> None:
@@ -107,7 +203,7 @@ def run(args: argparse.Namespace, rest: Sequence[str]) -> None:
 
     run_env: Mapping[str, str] = os.environ.copy()
     existing_python_path: str = run_env.get("PYTHONPATH", "")
-    run_env["PYTHONPATH"] = f"{existing_python_path}:{PYTHON_SRC_DIR}"
+    run_env["PYTHONPATH"] = f"{existing_python_path}:{PYTHON_SRC_DIR}:{PYTHON_RESOURCE_DIR}"
 
     try:
         subprocess.run(rest, env=run_env)

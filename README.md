@@ -4,8 +4,10 @@ Sidewinder is a statically-typed Pythonic language that targets LLVM IR.
 
 ## Dependencies
 
-* isort
-* black
+* isort (`pip install ...`)
+* black (`pip install ...`)
+* antlr (`brew install ...`)
+* antlr4-python3-runtime (`pip install ...`)
 * [Chiri](https://github.com/antonsynd/chiri)
 
 ## Roadmap
