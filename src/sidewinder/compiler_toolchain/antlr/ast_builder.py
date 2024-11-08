@@ -1,10 +1,15 @@
 from io import TextIOBase
 from typing import Optional, Sequence
 
+from sidewinder.compiler_toolchain.ast_builder import ASTBuilderBase
+
 from antlr4 import CommonTokenStream, InputStream, ParseTreeWalker
 from PythonLexer import PythonLexer
 from PythonParser import PythonParser
 from PythonParserListener import PythonParserListener
+
+
+FileInputContext = PythonParser.File_inputContext
 
 
 class CustomASTNode:
@@ -16,13 +21,12 @@ class CustomASTNode:
         return f"{self.name} -> ({', '.join(map(str, self.children))})"
 
 
-# Step 3: Define a Listener to Build Custom AST
 class ASTBuilder(PythonParserListener):
     def __init__(self):
         self.ast: Optional[CustomASTNode] = None
         self.node_stack: Sequence[CustomASTNode] = []
 
-    def enterEveryRule(self, ctx):
+    def enterEveryRule(self, ctx: FileInputContext):
         # Called when entering any rule
         node_name = PythonParser.ruleNames[ctx.getRuleIndex()]
         node = CustomASTNode(name=node_name)
@@ -37,11 +41,11 @@ class ASTBuilder(PythonParserListener):
         self.node_stack.pop()
 
 
-class AntlrASTBuilder:
+class AntlrASTBuilder(ASTBuilderBase):
     def __init__(self):
-        pass
+        super().__init__()
 
-    def generate_ast(input: TextIOBase) -> CustomASTNode:
+    def generate_ast(input: TextIOBase) -> None:
         stream = InputStream(data=input.read())
         lexer = PythonLexer(input=stream)
         token_stream = CommonTokenStream(lexer=lexer)
@@ -54,4 +58,4 @@ class AntlrASTBuilder:
         walker = ParseTreeWalker()
         walker.walk(listener=ast_builder, t=parse_tree)
 
-        return ast_builder.ast
+        # return ast_builder.ast
