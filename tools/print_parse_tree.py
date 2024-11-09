@@ -22,7 +22,7 @@ def main() -> None:
     parse_tree: FileInputContext = parser.file_input()
     parse_tree = antlr_builder._postprocess_parse_tree(parse_tree=parse_tree)
 
-    render_as_png(parse_tree=parser, parser=parser, output_path=output_path)
+    render_as_png(parse_tree=parse_tree, parser=parser, output_path=output_path)
 
 
 def parse_args() -> argparse.Namespace:
