@@ -4,12 +4,12 @@ import hashlib
 import json
 import logging
 import os
-import requests
 import subprocess
 import sys
-
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
+
+import requests
 
 _logger: logging.Logger = logging.getLogger(name="build_sidewinder")
 
