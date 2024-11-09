@@ -5,7 +5,7 @@ from pathlib import Path
 
 from PythonParser import PythonParser
 
-from sidewinder.compiler_toolchain.antlr.ast_builder import AntlrASTBuilder
+from sidewinder.compiler_toolchain.antlr.parser import AntlrParser
 from sidewinder.compiler_toolchain.antlr.rendering import render_as_png
 from sidewinder.compiler_toolchain.parser import ParseTreeNode
 
@@ -17,7 +17,7 @@ def main() -> None:
     input_buffer = StringIO(input_path.read_text())
     output_path: Path = args.output
 
-    antlr_builder = AntlrASTBuilder()
+    antlr_builder = AntlrParser()
     parser: PythonParser = antlr_builder._create_parser(input=input_buffer)
     parse_tree: ParseTreeNode = parser.file_input()
     parse_tree = antlr_builder._postprocess_parse_tree(parse_tree=parse_tree)

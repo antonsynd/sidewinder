@@ -5,7 +5,7 @@ from antlr4 import ParserRuleContext
 from graphviz import Digraph
 from PythonParser import PythonParser
 
-from sidewinder.compiler_toolchain.parse_tree import ParseTreeNode
+from sidewinder.compiler_toolchain.parser import ParseTreeNode
 
 
 def render_as_png(parse_tree: ParseTreeNode, parser: PythonParser, output_path: Path):
