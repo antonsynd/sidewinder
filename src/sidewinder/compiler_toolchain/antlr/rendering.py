@@ -5,16 +5,16 @@ from antlr4 import ParserRuleContext
 from graphviz import Digraph
 from PythonParser import PythonParser
 
-from sidewinder.compiler_toolchain.antlr.ast_builder import FileInputContext
+from sidewinder.compiler_toolchain.parse_tree import ParseTreeNode
 
 
-def render_as_png(parse_tree: FileInputContext, parser: PythonParser, output_path: Path):
+def render_as_png(parse_tree: ParseTreeNode, parser: PythonParser, output_path: Path):
     dot: Digraph = parse_tree_to_dot(tree=parse_tree, parser=parser)
     dot.render(outfile=output_path, format="png")
 
 
 def parse_tree_to_dot(
-    tree: FileInputContext,
+    tree: ParseTreeNode,
     parser: PythonParser,
     dot: Optional[Digraph] = None,
 ) -> Digraph:

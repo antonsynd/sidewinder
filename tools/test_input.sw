@@ -1,11 +1,6 @@
-import sys
-
-
 def add(x: int, y: int) -> int:
     return x + y
 
+z: int = add(1, y=3)
 
-z: int = 3
-res = add(1, z)
-
-print(res, file=sys.stderr)
+print(res)

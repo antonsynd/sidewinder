@@ -3,11 +3,11 @@ import argparse
 from io import StringIO
 from pathlib import Path
 
-from graphviz import Digraph
 from PythonParser import PythonParser
 
-from sidewinder.compiler_toolchain.antlr.ast_builder import AntlrASTBuilder, FileInputContext
+from sidewinder.compiler_toolchain.antlr.ast_builder import AntlrASTBuilder
 from sidewinder.compiler_toolchain.antlr.rendering import render_as_png
+from sidewinder.compiler_toolchain.parser import ParseTreeNode
 
 
 def main() -> None:
@@ -19,7 +19,7 @@ def main() -> None:
 
     antlr_builder = AntlrASTBuilder()
     parser: PythonParser = antlr_builder._create_parser(input=input_buffer)
-    parse_tree: FileInputContext = parser.file_input()
+    parse_tree: ParseTreeNode = parser.file_input()
     parse_tree = antlr_builder._postprocess_parse_tree(parse_tree=parse_tree)
 
     render_as_png(parse_tree=parse_tree, parser=parser, output_path=output_path)
