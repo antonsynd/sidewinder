@@ -1,3 +1,4 @@
+from io import StringIO
 from enum import Enum, auto
 from typing import MutableSequence, Optional
 
@@ -10,9 +11,16 @@ class NodeType(Enum):
     ASSIGNMENT = auto()
     FUNCTION_CALL = auto()
     PARAMETER = auto()
+    VARIABLE = auto()
 
 
 class Node:
+    """
+    Abstract base class for all AST nodes. A concrete subclass must implement
+    the is_complete() method. It should also optionally re-implement the
+    _write_additional_fields() method.
+    """
+
     Type = NodeType
 
     def __init__(self, node_type: NodeType, name: Optional[str] = None):
@@ -37,20 +45,39 @@ class Node:
         raise NotImplementedError()
 
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}("
-            f"type = '{self.node_type().name}', "
-            f"name = '{self.name()}'"
-            f")"
-        )
+        buffer = StringIO()
+        buffer.write(f"{self.__class__.__name__} @ {id(self)} (")
+
+        fields: MutableSequence[str] = [
+            f"type = '{self.node_type().name}'",
+            f"name = '{self.name()}'",
+        ]
+
+        self._write_additional_fields(fields=fields)
+
+        buffer.write(", ".join(fields))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        raise NotImplementedError()
 
 
-class Atom(Node):
+class Expression(Node):
+    def __init__(self, node_type: Node.Type):
+        super().__init__(node_type=node_type)
+
+
+class Atom(Expression):
     def __init__(self):
         super().__init__(node_type=Node.Type.ATOM)
 
     def is_complete(self) -> bool:
         return self.name() is not None
+
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        pass
 
 
 class DataTypeName(Enum):
@@ -75,9 +102,26 @@ class DataType:
         return DataType(name=DataTypeName.NONE)
 
 
-class Expression(Node):
-    def __init__(self, node_type: Node.Type):
-        super().__init__(node_type=node_type)
+class Variable(Node):
+    def __init__(self):
+        super().__init__(node_type=Node.Type.VARIABLE)
+        self._data_type: Optional[DataType] = None
+
+    def data_type(self) -> DataType:
+        if self._data_type is None:
+            return DataType.none_type()
+
+        return self._data_type
+
+    def set_data_type(self, data_type: DataType) -> "Parameter":
+        self._data_type: DataType = data_type
+        return self
+
+    def is_complete(self) -> bool:
+        return self._data_type is not None
+
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        fields.append(f"data_type = {repr(self.data_type())}")
 
 
 class Parameter(Node):
@@ -106,6 +150,10 @@ class Parameter(Node):
     def is_complete(self) -> bool:
         return self._data_type is not None
 
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        fields.append(f"data_type = {repr(self.data_type())}")
+        fields.append(f"default_value = {repr(self.default_value())}")
+
 
 class Sum(Expression):
     def __init__(self):
@@ -130,6 +178,10 @@ class Sum(Expression):
     def is_complete(self) -> bool:
         return self.left() is not None and self.right() is not None
 
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        fields.append(f"left = {repr(self.left())}")
+        fields.append(f"right = {repr(self.right())}")
+
 
 class Statement(Node):
     def __init__(self, node_type: Node.Type):
@@ -151,6 +203,10 @@ class Return(Statement):
     def is_complete(self) -> bool:
         # Return statements can always return nothing, which defaults to None
         return True
+
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        fields.append(f"expressions = {repr(self.expressions())}")
+        fields.append(f"return_type = {repr(self.return_type())}")
 
 
 class FunctionDef(Statement):
@@ -179,18 +235,22 @@ class FunctionDef(Statement):
     def is_complete(self) -> bool:
         return self.name() is not None and self._return_type is not None
 
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        fields.append(f"parameters = {repr(self.parameters())}")
+        fields.append(f"statements = {repr(self.statements())}")
+        fields.append(f"return_type = {repr(self.return_type())}")
 
-class Argument(Expression):
-    def __init__(self, node_type: Node.Type):
-        super().__init__(node_type=node_type)
 
+class FunctionCall(Expression):
+    """
+    Representation of a function call, aka "primary" in ANTLR parse tree.
+    """
 
-class FunctionCall(Statement):
     def __init__(self):
         super().__init__(node_type=Node.Type.FUNCTION_CALL)
-        self._arguments: MutableSequence[Argument] = []
+        self._arguments: MutableSequence[Expression] = []
 
-    def arguments(self) -> MutableSequence[Argument]:
+    def arguments(self) -> MutableSequence[Expression]:
         return self._arguments
 
     def return_type(self) -> DataType:
@@ -202,13 +262,17 @@ class FunctionCall(Statement):
         # TODO: or maybe an expression...
         return self.name() is not None
 
-
-class Variable(Node):
-    def __init__(self):
-        super().__init__(node_type=Node.Type.VARIABLE)
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        fields.append(f"arguments = {repr(self.arguments())}")
+        fields.append(f"return_type = {repr(self.return_type())}")
 
 
 class Assignment(Statement):
+    """
+    Representation of an assignment to a variable. Note that assignments are
+    statements, not expressions.
+    """
+
     def __init__(self):
         super().__init__(node_type=Node.Type.ASSIGNMENT)
         self._left: Optional[Variable] = None
@@ -230,3 +294,7 @@ class Assignment(Statement):
 
     def is_complete(self) -> bool:
         return self.left() is not None and self.right() is not None
+
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        fields.append(f"left = {repr(self.left())}")
+        fields.append(f"right = {repr(self.right())}")
