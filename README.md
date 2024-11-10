@@ -4,15 +4,17 @@ Sidewinder is a statically-typed Pythonic language that targets LLVM IR.
 
 ## Dependencies
 
-Dependencies required on system:
-* `isort` (`pip install ...`)
-* `black` (`pip install ...`)
-* `antlr` (`brew install ...`)
-* `antlr4-python3-runtime` (`pip install ...`)
-* [Github: antonsynd/chiri](https://github.com/antonsynd/chiri)
-
-Dependencies downloaded during setup:
-* [Github: antlr/grammars-v4/python/python3_12](https://github.com/antlr/grammars-v4/tree/master/python/python3_12)
+| Name | Required? | Installation |
+| --- | --- | --- |
+| `isort` | Yes | `pip install isort` |
+| `black` | Yes | `pip install black` |
+| `antlr` | Yes | `brew install antlr` |
+| `antlr4-python3-runtime` | Yes | `pip install antlr4-python3-runtime` |
+| [Github: numba/llvmlite](https://github.com/numba/llvmlite) | Yes | `conda install --channel=numba llvmlite` |
+| [Github: antonsynd/chiri](https://github.com/antonsynd/chiri) | Yes | See instructions on [Github](https://github.com/antonsynd/chiri) |
+| [Github: antlr/grammars-v4/python/python3_12](https://github.com/antlr/grammars-v4/tree/master/python/python3_12) | Yes | Downloaded during `chiri pkg setup` |
+| `pydot` | Optional | `pip install pydot` |
+| `graphviz` | Optional | `pip install graphviz && brew install graphviz` |
 
 ## Roadmap
 
