@@ -57,9 +57,7 @@ class AntlrParser(ParserBase, PythonParserListener):
 
         return node
 
-    def _simplify_direct_lineages(
-        self, node: ParseTreeNode, keep_first_single_child: bool = True
-    ) -> ParseTreeNode:
+    def _simplify_direct_lineages(self, node: ParseTreeNode) -> ParseTreeNode:
         num_children: int = node.getChildCount()
 
         if num_children == 0:
@@ -71,9 +69,7 @@ class AntlrParser(ParserBase, PythonParserListener):
 
             # Prune the child node, but don't keep it unless it is the parent of
             # a terminal node
-            pruned_child: ParseTreeNode = self._simplify_direct_lineages(
-                node=child, keep_first_single_child=False
-            )
+            pruned_child: ParseTreeNode = self._simplify_direct_lineages(node=child)
             assert pruned_child
 
             node.children = [pruned_child]
@@ -83,9 +79,7 @@ class AntlrParser(ParserBase, PythonParserListener):
             # Recursively prune each child node
             for child in node.getChildren():
                 # Reset keep first single child for new lineages of nodes
-                pruned_child: ParseTreeNode = self._simplify_direct_lineages(
-                    node=child, keep_first_single_child=True
-                )
+                pruned_child: ParseTreeNode = self._simplify_direct_lineages(node=child)
 
                 # Keep a child if it was retained
                 if pruned_child:
@@ -101,9 +95,8 @@ class AntlrParser(ParserBase, PythonParserListener):
         if num_children == 1:
             child: ParseTreeNode = node.getChild(0)
 
-            # If this is the first node in a single lineage, or its child is terminal
-            # keep it
-            if keep_first_single_child or child.getChildCount() == 0:
+            # If this node's child is terminal keep it
+            if child.getChildCount() == 0:
                 return node
             else:
                 # Otherwise get the child directly

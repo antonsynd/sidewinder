@@ -1,6 +1,5 @@
 isort==5.13.2
 black==24.10.0
-antlr-ast==0.8.1
 antlr4-python3-runtime==4.13.2
 llvmlite==0.43.0
 pydot==3.0.2

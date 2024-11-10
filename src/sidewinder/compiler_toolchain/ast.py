@@ -1,5 +1,5 @@
-from io import StringIO
 from enum import Enum, auto
+from io import StringIO
 from typing import MutableSequence, Optional
 
 
@@ -12,6 +12,7 @@ class NodeType(Enum):
     FUNCTION_CALL = auto()
     PARAMETER = auto()
     VARIABLE = auto()
+    MODULE = auto()
 
 
 class Node:
@@ -62,6 +63,27 @@ class Node:
 
     def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
         raise NotImplementedError()
+
+
+class Statement(Node):
+    def __init__(self, node_type: Node.Type):
+        super().__init__(node_type=node_type)
+
+
+class Module(Node):
+    def __init__(self):
+        super().__init__(node_type=Node.Type.MODULE)
+        self._statements: MutableSequence[Statement] = []
+
+    def statements(self) -> MutableSequence[Statement]:
+        return self._statements
+
+    def is_complete(self):
+        # Always complete, there can be 0 statements
+        return True
+
+    def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
+        fields.append(f"statements = {self.statements()}")
 
 
 class Expression(Node):
@@ -181,11 +203,6 @@ class Sum(Expression):
     def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
         fields.append(f"left = {repr(self.left())}")
         fields.append(f"right = {repr(self.right())}")
-
-
-class Statement(Node):
-    def __init__(self, node_type: Node.Type):
-        super().__init__(node_type=node_type)
 
 
 class Return(Statement):
