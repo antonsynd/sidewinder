@@ -9,6 +9,7 @@ Sidewinder is a statically-typed Pythonic language that targets LLVM IR.
 | `isort` | Yes | `pip install isort` |
 | `black` | Yes | `pip install black` |
 | `antlr` | Yes | `brew install antlr` |
+| `antlr-ast` | Yes | `pip install antlr-ast` |
 | `antlr4-python3-runtime` | Yes | `pip install antlr4-python3-runtime` |
 | [Github: numba/llvmlite](https://github.com/numba/llvmlite) | Yes | `conda install --channel=numba llvmlite` |
 | [Github: antonsynd/chiri](https://github.com/antonsynd/chiri) | Yes | See instructions on [Github](https://github.com/antonsynd/chiri) |

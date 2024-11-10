@@ -2,7 +2,7 @@ from enum import Enum, auto
 from typing import MutableSequence, Optional
 
 
-class ASTNodeType(Enum):
+class NodeType(Enum):
     ATOM = auto()
     FUNCTION_DEF = auto()
     RETURN_STATEMENT = auto()
@@ -11,11 +11,11 @@ class ASTNodeType(Enum):
     FUNCTION_CALL = auto()
 
 
-class ASTNode:
-    Type = ASTNodeType
+class Node:
+    Type = NodeType
 
-    def __init__(self, node_type: ASTNodeType, name: Optional[str] = None):
-        self._node_type: ASTNodeType = node_type
+    def __init__(self, node_type: NodeType, name: Optional[str] = None):
+        self._node_type: NodeType = node_type
         self._name: Optional[str] = name
 
     def name(self) -> str:
@@ -24,11 +24,11 @@ class ASTNode:
     def set_name(self, name: str) -> None:
         self._name: str = name
 
-    def node_type(self) -> ASTNodeType:
+    def node_type(self) -> Type:
         return self._node_type
 
-    def set_node_type(self, node_type: ASTNodeType) -> None:
-        self._node_type: ASTNodeType = node_type
+    def set_node_type(self, node_type: Type) -> None:
+        self._node_type: NodeType = node_type
 
     def is_complete(self) -> bool:
         raise NotImplementedError()
@@ -42,9 +42,9 @@ class ASTNode:
         )
 
 
-class AtomASTNode(ASTNode):
+class Atom(Node):
     def __init__(self):
-        super().__init__(node_type=ASTNode.Type.ATOM)
+        super().__init__(node_type=Node.Type.ATOM)
 
     def is_complete(self) -> bool:
         return self.name() is not None
@@ -73,48 +73,48 @@ class DataType:
         return self._name
 
 
-class ExpressionASTNode(ASTNode):
-    def __init__(self, node_type: ASTNode.Type):
+class Expression(Node):
+    def __init__(self, node_type: Node.Type):
         super().__init__(node_type=node_type)
 
 
-class SumASTNode(ExpressionASTNode):
+class Sum(Expression):
     def __init__(self):
-        super().__init__(node_type=ASTNode.Type.SUM)
-        self._left: Optional[ExpressionASTNode] = None
-        self._right: Optional[ExpressionASTNode] = None
+        super().__init__(node_type=Node.Type.SUM)
+        self._left: Optional[Expression] = None
+        self._right: Optional[Expression] = None
 
-    def left(self) -> Optional[ExpressionASTNode]:
+    def left(self) -> Optional[Expression]:
         return self._left
 
-    def set_left(self, left: ExpressionASTNode) -> None:
+    def set_left(self, left: Expression) -> None:
         self._left = left
 
-    def right(self) -> Optional[ExpressionASTNode]:
+    def right(self) -> Optional[Expression]:
         return self._right
 
-    def set_right(self, right: ExpressionASTNode) -> None:
+    def set_right(self, right: Expression) -> None:
         self._right = right
 
     def is_complete(self) -> bool:
         return self.left() is not None and self.right() is not None
 
 
-class StatementASTNode(ASTNode):
-    def __init__(self, node_type: ASTNode.Type):
+class Statement(Node):
+    def __init__(self, node_type: Node.Type):
         super().__init__(node_type=node_type)
 
 
-class ReturnStatementASTNode(StatementASTNode):
+class Return(Statement):
     def __init__(self):
-        super().__init__(node_type=ASTNode.Type.RETURN_STATEMENT)
-        self._expressions: MutableSequence[ExpressionASTNode] = []
+        super().__init__(node_type=Node.Type.RETURN_STATEMENT)
+        self._expressions: MutableSequence[Expression] = []
 
     def return_type(self) -> DataType:
         # Calculate this from the expressions
         pass
 
-    def expressions(self) -> MutableSequence[ExpressionASTNode]:
+    def expressions(self) -> MutableSequence[Expression]:
         return self._expressions
 
     def is_complete(self) -> bool:
@@ -122,17 +122,17 @@ class ReturnStatementASTNode(StatementASTNode):
         return True
 
 
-class FunctionDefASTNode(StatementASTNode):
+class FunctionDef(Statement):
     def __init__(self):
-        super().__init__(node_type=ASTNode.Type.FUNCTION_DEF)
+        super().__init__(node_type=Node.Type.FUNCTION_DEF)
         self._parameters: MutableSequence[Parameter] = []
-        self._statements: MutableSequence[StatementASTNode] = []
+        self._statements: MutableSequence[Statement] = []
         self._return_type: Optional[DataType] = None
 
     def parameters(self) -> MutableSequence[Parameter]:
         return self._parameters
 
-    def statements(self) -> MutableSequence[StatementASTNode]:
+    def statements(self) -> MutableSequence[Statement]:
         return self._statements
 
     def return_type(self) -> DataType:
@@ -148,17 +148,17 @@ class FunctionDefASTNode(StatementASTNode):
         return self.name() is not None and self._return_type is not None
 
 
-class ArgumentASTNode(ASTNode):
-    def __init__(self, node_type: ASTNode.Type):
+class Argument:
+    def __init__(self, node_type: Node.Type):
         super().__init__(node_type=node_type)
 
 
-class FunctionCallASTNode(StatementASTNode):
+class FunctionCall(Statement):
     def __init__(self):
-        super().__init__(node_type=ASTNode.Type.FUNCTION_CALL)
-        self._arguments: MutableSequence[ArgumentASTNode] = []
+        super().__init__(node_type=Node.Type.FUNCTION_CALL)
+        self._arguments: MutableSequence[Argument] = []
 
-    def arguments(self) -> MutableSequence[ArgumentASTNode]:
+    def arguments(self) -> MutableSequence[Argument]:
         return self._arguments
 
     def return_type(self) -> DataType:
