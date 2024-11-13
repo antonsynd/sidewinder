@@ -3,6 +3,46 @@ from io import StringIO
 from typing import MutableSequence, Optional
 
 
+# Begin forward declarations
+class Node:
+    pass
+
+
+class DataType:
+    pass
+
+
+class Parameter:
+    pass
+
+
+class Variable:
+    pass
+
+
+class Expression:
+    pass
+
+
+class Sum:
+    pass
+
+
+class Statement:
+    pass
+
+
+class Assignment:
+    pass
+
+
+class FunctionDef:
+    pass
+
+
+# End forward declarations
+
+
 class NodeType(Enum):
     ATOM = auto()
     FUNCTION_DEF = auto()
@@ -31,14 +71,14 @@ class Node:
     def name(self) -> str:
         return self._name if self._name else ""
 
-    def set_name(self, name: str) -> "Node":
+    def set_name(self, name: str) -> Node:
         self._name: str = name
         return self
 
     def node_type(self) -> NodeType:
         return self._node_type
 
-    def set_node_type(self, node_type: NodeType) -> "Node":
+    def set_node_type(self, node_type: NodeType) -> Node:
         self._node_type: NodeType = node_type
         return self
 
@@ -103,11 +143,11 @@ class Atom(Expression):
 
 
 class DataTypeName(Enum):
-    NONE = auto()
-    BOOL = auto()
-    INT = auto()
-    FLOAT = auto()
-    STR = auto()
+    NONE = "none"
+    BOOL = "bool"
+    INT = "int"
+    FLOAT = "float"
+    STR = "str"
 
 
 class DataType:
@@ -120,7 +160,7 @@ class DataType:
         return self._name
 
     @classmethod
-    def none_type(cls) -> "DataType":
+    def none_type(cls) -> DataType:
         return DataType(name=DataTypeName.NONE)
 
 
@@ -135,7 +175,7 @@ class Variable(Node):
 
         return self._data_type
 
-    def set_data_type(self, data_type: DataType) -> "Parameter":
+    def set_data_type(self, data_type: DataType) -> Variable:
         self._data_type: DataType = data_type
         return self
 
@@ -158,14 +198,14 @@ class Parameter(Node):
 
         return self._data_type
 
-    def set_data_type(self, data_type: DataType) -> "Parameter":
+    def set_data_type(self, data_type: DataType) -> Parameter:
         self._data_type: DataType = data_type
         return self
 
     def default_value(self) -> Optional[Expression]:
         return self._default_value
 
-    def set_default_value(self, default_value: Optional[Expression]) -> "Parameter":
+    def set_default_value(self, default_value: Optional[Expression]) -> Parameter:
         self._default_value: Optional[Expression] = default_value
         return self
 
@@ -186,14 +226,14 @@ class Sum(Expression):
     def left(self) -> Optional[Expression]:
         return self._left
 
-    def set_left(self, left: Expression) -> "Sum":
+    def set_left(self, left: Expression) -> Sum:
         self._left = left
         return self
 
     def right(self) -> Optional[Expression]:
         return self._right
 
-    def set_right(self, right: Expression) -> "Sum":
+    def set_right(self, right: Expression) -> Sum:
         self._right = right
         return self
 
@@ -245,7 +285,7 @@ class FunctionDef(Statement):
 
         return DataType(name=DataTypeName.NONE)
 
-    def set_return_type(self, return_type: DataType) -> "FunctionDef":
+    def set_return_type(self, return_type: DataType) -> FunctionDef:
         self._return_type: DataType = return_type
         return self
 
@@ -298,14 +338,14 @@ class Assignment(Statement):
     def left(self) -> Optional[Expression]:
         return self._left
 
-    def set_left(self, left: Variable) -> "Sum":
+    def set_left(self, left: Variable) -> Assignment:
         self._left = left
         return self
 
     def right(self) -> Optional[Expression]:
         return self._right
 
-    def set_right(self, right: Expression) -> "Sum":
+    def set_right(self, right: Expression) -> Assignment:
         self._right = right
         return self
 

@@ -10,6 +10,22 @@ from sidewinder.compiler_toolchain.ast_builder import ASTBuilderBase
 from sidewinder.compiler_toolchain.parser import ParseTreeNode
 
 
+# Begin forward declarations
+class Context:
+    pass
+
+
+class NodeName:
+    pass
+
+
+class FunctionCallContext:
+    pass
+
+
+# End forward declarations
+
+
 class NodeName(Enum):
     UNKNOWN = auto()
     MODULE = auto()
@@ -22,11 +38,11 @@ class NodeName(Enum):
     ARGUMENTS = auto()
 
     @classmethod
-    def from_str(cls, s: str) -> "NodeName":
+    def from_str(cls, s: str) -> NodeName:
         return _node_name_str_to_enum_mapping.get(s, NodeName.UNKNOWN)
 
 
-_node_name_str_to_enum_mapping: Mapping[str, "NodeName"] = {
+_node_name_str_to_enum_mapping: Mapping[str, NodeName] = {
     "file_input": NodeName.MODULE,
     "primary": NodeName.FUNCTION_CALL,
     "atom": NodeName.ATOM,
@@ -42,7 +58,7 @@ class Context:
     def flush(self, name: NodeName) -> Optional[Node]:
         raise NotImplementedError()
 
-    def handle(self, name: NodeName, text: str, node: ParseTreeNode) -> Optional["Context"]:
+    def handle(self, name: NodeName, text: str, node: ParseTreeNode) -> Optional[Context]:
         raise NotImplementedError()
 
     def raise_unexpected(self, name: NodeName) -> None:
@@ -50,7 +66,7 @@ class Context:
 
 
 class ModuleContext(Context):
-    def handle(self, name: NodeName, text: str, node: ParseTreeNode) -> Optional["Context"]:
+    def handle(self, name: NodeName, text: str, node: ParseTreeNode) -> Optional[Context]:
         if name == NodeName.MODULE:
             # No need to do anything
             return None
@@ -71,8 +87,7 @@ class AtomContext(Context):
     pass
 
 
-# Forward decl
-class FunctionCallContext(Context):
+class ReturnStatementContext(Context):
     pass
 
 
@@ -140,6 +155,7 @@ _node_name_to_context_class_mapping: Mapping[NodeName, Type] = {
     NodeName.ATOM: AtomContext,
     NodeName.FUNCTION_CALL: FunctionCallContext,
     NodeName.ARGUMENTS: ArgumentsContext,
+    NodeName.RETURN_STATEMENT: ReturnStatementContext,
 }
 
 
