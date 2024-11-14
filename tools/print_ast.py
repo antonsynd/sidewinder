@@ -24,6 +24,8 @@ def main() -> None:
     ast_builder = AntlrASTBuilder()
     node: Node = ast_builder.generate_ast(parse_tree=parse_tree)
 
+    print(f"Resulting AST: {node}")
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="")
