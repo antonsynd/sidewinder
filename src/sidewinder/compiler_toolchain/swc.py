@@ -10,7 +10,7 @@ def main() -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="")
+    parser = argparse.ArgumentParser(description="swc: the Sidewinder compiler")
     parser.add_argument("-i", "--input", type=Path, required=True)
 
     return parser.parse_args()
