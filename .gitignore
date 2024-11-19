@@ -4,6 +4,10 @@ __resources/
 *.gv
 **/.DS_Store
 
+# Generated object files
+*.o
+*.bin
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
