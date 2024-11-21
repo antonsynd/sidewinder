@@ -1,7 +1,14 @@
-from typing import Any, Mapping, MutableMapping, MutableSet, Optional, Union
+from collections import deque
+from typing import Any, Deque, Mapping, MutableMapping, MutableSet, Optional, Union
 
 from llvmlite import binding, ir
 
+from sidewinder.compiler_toolchain.ast import (
+    Node,
+    Module as ModuleNode,
+    FunctionCall as FunctionCallNode,
+    Atom as AtomNode,
+)
 from sidewinder.compiler_toolchain.codegen.types import (
     INT8_T,
     INT32_T,
@@ -169,3 +176,58 @@ class CodeGenerator:
             self._assert_has_current_module()
 
         self._current_module = None
+
+
+class CodeGeneratorASTVisitor:
+    def __init__(self, generator: CodeGenerator):
+        self._generator: CodeGenerator = generator
+        self._node_stack: Deque[Node] = deque()
+
+    def generator(self) -> CodeGenerator:
+        return self._generator
+
+    def generate_module(self, name: str, node: Node) -> str:
+        module_generator: ModuleCodeGenerator = self.generator().add_module(
+            name=name, open_module=True
+        )
+
+        # Push node into stack
+        self.push(node)
+
+        # Visit nodes until we exhaust them
+        while not self._node_stack:
+            self.visit(node=self.pop())
+
+        # Dump IR
+        module_ir: str = module_generator.dump()
+
+        # Close the module
+        self.generator().close_module()
+
+        return module_ir
+
+    def push(self, node: Node) -> None:
+        self._node_stack.append(node)
+
+    def pop(self) -> Node:
+        return self._node_stack.pop()
+
+    def visit(self, node: Node) -> None:
+        if isinstance(node, ModuleNode):
+            # TODO: check for nested module and raise error
+            for statement_node in reversed(node.statements()):
+                self.push(statement_node)
+        elif isinstance(node, FunctionCallNode):
+            pass
+        elif isinstance(node, AtomNode):
+            pass
+        else:
+            raise ValueError(f"Unsupported node {node}")
+
+
+# Module @ 4381591824 (type = 'MODULE', name = '', statements = [
+#   FunctionCall @ 4374328272 (type = 'FUNCTION_CALL', name = 'print', arguments = [
+#       Atom @ 4383281744 (type = 'ATOM', name = '5'),
+#       Atom @ 4379802256 (type = 'ATOM', name = '7')
+#   ],
+#   return_type = None)])

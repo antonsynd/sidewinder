@@ -45,7 +45,7 @@ class AntlrASTBuilder(ASTBuilderBase, PythonParserListener):
             )
 
             if not new_ctx:
-                raise ValueError(f"ASTNode with name {node_name.name} is not supported")
+                raise ValueError(f"Node with name {node_name.name} is not supported")
 
             self._ctx_stack.append(new_ctx)
 
@@ -60,7 +60,7 @@ class AntlrASTBuilder(ASTBuilderBase, PythonParserListener):
         if new_node and self._ctx_stack:
             # If there is still a context on the stack, have it accept the new
             # ASTNode
-            self._ctx_stack[-1].accept(ASTNode=new_node)
+            self._ctx_stack[-1].accept(node=new_node)
         else:
             # Otherwise, we are done, the returned ASTNode is the root
             self._ast = new_node

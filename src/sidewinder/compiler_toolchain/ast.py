@@ -1,6 +1,7 @@
+import re
 from enum import Enum, auto
 from io import StringIO
-from typing import MutableSequence, Optional
+from typing import MutableSequence, Optional, TypeAlias
 
 
 class NodeType(Enum):
@@ -13,6 +14,14 @@ class NodeType(Enum):
     PARAMETER = auto()
     VARIABLE = auto()
     MODULE = auto()
+
+
+class AtomType(Enum):
+    UNKNOWN = auto()
+    IDENTIFIER = auto()
+    INT = auto()
+    FLOAT = auto()
+    STR = auto()
 
 
 class Node:
@@ -95,14 +104,59 @@ class Expression(Node):
 
 
 class Atom(Expression):
+    Type: TypeAlias = AtomType
+
     def __init__(self):
         super().__init__(node_type=Node.Type.ATOM)
+        self._atom_type: AtomType = AtomType.UNKNOWN
+
+    def set_name(self, name) -> None:
+        super().set_name(name)
+
+        if re.match(r"(?:-?[0-9]+|0x[0-9A-Fa-f]+)$", self.name()):
+            self._atom_type = AtomType.INT
+        elif re.match(r"-?[0-9]+\.[0-9]+$", self.name()):
+            self._atom_type = AtomType.FLOAT
+        elif re.match(r"(['\"]).*\1$", self.name()):
+            self._atom_type = AtomType.STR
+        elif re.match(r"[_a-zA-Z][_A-Za-z0-9]*$", self.name()):
+            self._atom_type = AtomType.IDENTIFIER
+        else:
+            pass
+            # raise ValueError(f"Unable to determine atom type with name {self.name()}")
+
+    def atom_type(self) -> AtomType:
+        return self._atom_type
+
+    def int_value(self) -> int:
+        if self._atom_type != AtomType.INT:
+            raise ValueError("Atom is not an int")
+
+        return int(self.name())
+
+    def float_value(self) -> float:
+        if self._atom_type != AtomType.FLOAT:
+            raise ValueError("Atom is not a float")
+
+        return float(self.name())
+
+    def identifier_value(self) -> str:
+        if self._atom_type != AtomType.STR:
+            raise ValueError("Atom is not a str")
+
+        return self.name()
+
+    def identifier_value(self) -> str:
+        if self._atom_type != AtomType.IDENTIFIER:
+            raise ValueError("Atom is not an identifier")
+
+        return self.name()
 
     def is_complete(self) -> bool:
         return self.name() is not None
 
     def _write_additional_fields(self, fields: MutableSequence[str]) -> None:
-        pass
+        fields.append(f"atom_type = {self.atom_type().name}")
 
 
 class DataTypeName(Enum):
@@ -114,7 +168,7 @@ class DataTypeName(Enum):
 
 
 class DataType:
-    Name = DataTypeName
+    Name: TypeAlias = DataTypeName
 
     def __init__(self, name: DataTypeName):
         self._name: DataTypeName = name
