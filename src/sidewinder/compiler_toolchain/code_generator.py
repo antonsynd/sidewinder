@@ -1,9 +1,8 @@
-import llvmlite
-
 from enum import Enum
-from llvmlite import binding, ir
-
 from typing import Sequence, Type
+
+import llvmlite
+from llvmlite import binding, ir
 
 
 class BuiltInTypeName(Enum):

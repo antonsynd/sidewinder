@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import argparse
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
-from llvmlite import ir, binding
+from llvmlite import binding, ir
 
 
 def main() -> None:

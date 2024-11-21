@@ -4,8 +4,8 @@ from io import StringIO
 from pathlib import Path
 from typing import Sequence
 
-from sidewinder.compiler_toolchain.default_ast_builder import DefaultASTBuilder
 from sidewinder.compiler_toolchain.ast import Node
+from sidewinder.compiler_toolchain.default_ast_builder import DefaultASTBuilder
 from sidewinder.compiler_toolchain.default_parser import DefaultParser
 from sidewinder.compiler_toolchain.parser import ParseTreeNode
 
