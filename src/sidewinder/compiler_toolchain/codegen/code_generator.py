@@ -3,12 +3,10 @@ from typing import Any, Deque, Mapping, MutableMapping, MutableSet, Optional, Un
 
 from llvmlite import binding, ir
 
-from sidewinder.compiler_toolchain.ast import (
-    Node,
-    Module as ModuleNode,
-    FunctionCall as FunctionCallNode,
-    Atom as AtomNode,
-)
+from sidewinder.compiler_toolchain.ast import Atom as AtomNode
+from sidewinder.compiler_toolchain.ast import FunctionCall as FunctionCallNode
+from sidewinder.compiler_toolchain.ast import Module as ModuleNode
+from sidewinder.compiler_toolchain.ast import Node
 from sidewinder.compiler_toolchain.codegen.types import (
     INT8_T,
     INT32_T,
