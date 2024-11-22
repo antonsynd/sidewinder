@@ -1,5 +1,45 @@
 # Sidewinder Builtins
 
+```C++
+struct Complex {
+ public:
+  int Real() const;
+  int Imag() const;
+};
+
+template<typename T>
+concept Value = std::is_same_v<T, int>
+             || std::is_same_v<T, float>
+             || std::is_same_v<T, bool>
+             || std::is_same_v<T, Complex>;
+
+template<typename T>
+concept Object = !Value<T>;
+
+template<Object T>
+using Reference = std::shared_ptr<T>;
+
+template<typename T>
+using Optional = std::conditional_t<std::optional<T>, Reference<T>>;
+
+template<typename T>
+using Const = std::conditional_t<Value<T>, const T, const Reference<T>&>;
+
+template<typename T>
+using Mutable = std::conditional_t<Value<T>, T, Reference<T>>;
+
+template<typename T>
+constexpr auto kNone = std::conditional_t<Value<T>, std::nullopt, std::nullptr>;
+
+// if *args -> store each argument into std::vector<any>
+// then unpack each in order with appropriate cast
+//
+// if **kwargs -> store by name matching into custom FunctionArgs
+// and invoke in custom invocation
+template<typename R, typename ...Args>
+class FunctionApplyer;
+```
+
 ## abs(x)
 
 ```C++
@@ -24,13 +64,6 @@ Not for Sidewinder v1.0
 ## all(iterable)
 
 ```C++
-template<typename T>
-concept Value = std::is_same_v<T, int>
-  || std::is_same_v<T, float>
-  || std::is_same_v<T, bool>
-  || std::is_same_v<T, std::nullptr_t>
-  || std::is_same_v<T, Complex>;
-
 template<typename T>
 concept HasBool = requires(const T& t) {
   { t.__Bool() } -> std::same_as<bool>;
