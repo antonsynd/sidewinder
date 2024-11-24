@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+import argparse
+import sys
 from dataclasses import dataclass
 from io import StringIO
 from typing import AbstractSet, Optional, MutableSequence, Sequence, TypeAlias
@@ -11,11 +14,13 @@ ReturnType: TypeAlias = str
 
 import re
 
-function_signature_pattern = re.compile(r"(.+)\s+([_a-zA-Z][_a-zA-Z0-9]*)\((.+)\)")
+function_signature_pattern = re.compile(r"(.+)\s+([_a-zA-Z][_a-zA-Z0-9]*)\((.*)\)")
 function_modifiers: AbstractSet[str] = {
     "static",
     "virtual",
     "final",
+    "constexpr",
+    "inline",
 }
 argument_pattern = re.compile(r"(.+)\s+([_a-zA-Z][_a-zA-Z0-9]*)(?:\s+=\s+(.+))?")
 
@@ -86,8 +91,10 @@ class CodeStringIO:
         self._buffer = StringIO()
         self._indent: str = ""
 
-    def write(self, s: str) -> None:
-        self._write_indent()
+    def write(self, s: str, no_indent: bool = False) -> None:
+        if not no_indent:
+            self._write_indent()
+
         self._buffer.write(s)
 
     def newline(self) -> None:
@@ -110,9 +117,15 @@ class CodeStringIO:
 
 
 def generate_function_argument_proxy(func_sig: FunctionSignature) -> str:
+    args: Sequence[FunctionArgument] = func_sig.args
+    num_args: int = len(args)
+
+    if not num_args:
+        # No need for argument proxy if there are no args
+        return ""
+
     buffer = CodeStringIO()
     func_name: FunctionName = func_sig.name
-    args: Sequence[FunctionArgument] = func_sig.args
 
     proxy_class_name: str = f"__FunctionArgs__{func_name}"
 
@@ -128,7 +141,7 @@ def generate_function_argument_proxy(func_sig: FunctionSignature) -> str:
         buffer.write(f"using arg{i}_type = {arg.arg_type};\n")
 
     buffer.newline()
-    buffer.write(f"{proxy_class_name}(std::vector<std::any> args) {{\n")
+    buffer.write(f"explicit {proxy_class_name}(std::vector<std::any> args) {{\n")
     buffer.indent()
 
     for i in range(len(args)):
@@ -138,7 +151,9 @@ def generate_function_argument_proxy(func_sig: FunctionSignature) -> str:
     buffer.write("}\n")
 
     buffer.newline()
-    buffer.write(f"{proxy_class_name}(std::unordered_map<std::string, std::any> args) {{\n")
+    buffer.write(
+        f"explicit {proxy_class_name}(std::unordered_map<std::string, std::any> args) {{\n"
+    )
 
     buffer.indent()
     for i, arg in enumerate(args):
@@ -162,7 +177,7 @@ def generate_function_argument_proxy(func_sig: FunctionSignature) -> str:
         buffer.write(f"arg{i}_type arg{i}_;\n")
 
     buffer.dedent()
-    buffer.write("}\n")
+    buffer.write("};\n")
 
     return buffer.getvalue()
 
@@ -174,3 +189,165 @@ def generate_function_argument_proxy_from_str(s: str) -> str:
         return ""
 
     return generate_function_argument_proxy(func_sig=opt_sig)
+
+
+def _generate_arg_forwarding_body(
+    buffer: CodeStringIO, args_class_name: str, num_args: int
+) -> None:
+    buffer.indent()
+    buffer.write(f"{args_class_name} arg_helper(std::move(args));\n")
+
+    buffer.newline()
+
+    if num_args:
+        buffer.write(f"return func_(\n")
+
+        buffer.indent()
+
+        for i in range(num_args - 1):
+            buffer.write(f"arg_helper.Arg{i}(),\n")
+
+        buffer.write(f"arg_helper.Arg{num_args - 1}());\n")
+        buffer.dedent()
+    else:
+        buffer.write(f"return func_();\n")
+
+    buffer.dedent()
+
+
+def generate_function_invocable_proxy(func_sig: FunctionSignature) -> str:
+    buffer = CodeStringIO()
+    func_name: FunctionName = func_sig.name
+    return_type: ReturnType = func_sig.return_type
+    args: Sequence[FunctionArgument] = func_sig.args
+    num_args: int = len(args)
+
+    args_class_name: str = f"__FunctionArgs__{func_name}"
+    proxy_class_name: str = f"__FunctionProxy__{func_name}"
+    user_implementation_name: str = f"__UserFunctionImplementation__{func_name}"
+
+    buffer.write(f"struct {proxy_class_name} : public FunctionBase {{\n")
+
+    buffer.indent(n=1)
+    buffer.write("public:\n")
+
+    buffer.indent(n=1)
+    buffer.write(f"using return_type = {return_type};\n")
+
+    for i in range(num_args):
+        buffer.write(f"using arg{i}_type = {args_class_name}::arg{i}_type;\n")
+
+    buffer.newline()
+    buffer.write(f"{proxy_class_name}() : func_({user_implementation_name}) {{}}\n")
+
+    buffer.newline()
+
+    if num_args:
+        buffer.write("return_type operator()(std::vector<std::any> args) const {\n")
+        _generate_arg_forwarding_body(
+            buffer=buffer, args_class_name=args_class_name, num_args=num_args
+        )
+        buffer.write("}\n")
+    else:
+        buffer.write("return_type operator()(std::vector<std::any>) const { return func_(); }\n")
+
+    buffer.newline()
+
+    if num_args:
+        buffer.write(
+            f"return_type operator()(std::unordered_map<std::string, std::any> args) const {{\n"
+        )
+        _generate_arg_forwarding_body(
+            buffer=buffer, args_class_name=args_class_name, num_args=num_args
+        )
+        buffer.write("}\n")
+    else:
+        buffer.write(
+            "return_type operator()(std::unordered_map<std::string, std::any>) const { return func_(); }\n"
+        )
+
+    buffer.newline()
+
+    if num_args:
+        buffer.write("return_type operator()(\n")
+        buffer.indent(n=4)
+
+        for i, arg in enumerate(args[:-1]):
+            buffer.write(f"arg{i}_type {arg.name},\n")
+
+        buffer.write(f"arg{i}_type {args[-1].name}) const {{\n")
+        buffer.dedent()
+
+        buffer.write("return func_(\n")
+        buffer.indent()
+
+        for arg in args[:-1]:
+            buffer.write(f"{arg.name},\n")
+
+        buffer.write(f"{args[-1].name});\n")
+        buffer.dedent(n=4)
+        buffer.write("}\n")
+    else:
+        buffer.write("return_type operator()() const { return func_(); }\n")
+
+    buffer.newline()
+    buffer.dedent(n=1)
+    buffer.write("private:\n")
+    buffer.indent(n=1)
+
+    if num_args:
+        buffer.write(f"std::function<{return_type}(\n")
+        buffer.indent(n=4)
+
+        for i, arg in enumerate(args[:-1]):
+            buffer.write(f"{arg.arg_type},\n")
+
+        buffer.write(f"{args[-1].arg_type})> func_;\n")
+        buffer.dedent(n=4)
+    else:
+        buffer.write(f"std::function<{return_type}()> func_;\n")
+
+    buffer.dedent()
+    buffer.write("};\n")
+    buffer.dedent()
+
+    buffer.newline()
+    buffer.write(f"const {proxy_class_name} {func_name};\n")
+
+    return buffer.getvalue()
+
+
+def generate_function_invocable_proxy_from_str(s: str) -> str:
+    opt_sig: Optional[FunctionSignature] = parse_function_signature(s=s)
+
+    if not opt_sig:
+        return ""
+
+    return generate_function_invocable_proxy(func_sig=opt_sig)
+
+
+def main() -> None:
+    args: argparse.Namespace = parse_args()
+    input_sig: str = args.input
+
+    opt_sig: Optional[FunctionSignature] = parse_function_signature(s=input_sig)
+
+    if not opt_sig:
+        print(f"Function signature is invalid", file=sys.stderr)
+        sys.exit(1)
+
+    print(generate_function_argument_proxy(func_sig=opt_sig))
+    print(generate_function_invocable_proxy(func_sig=opt_sig))
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-i", "--input", type=str, required=True, help="The C++ function signature."
+    )
+
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    main()
