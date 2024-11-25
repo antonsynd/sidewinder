@@ -1,6 +1,8 @@
 # sidewinder
 
-Sidewinder is a statically-typed Pythonic language that targets LLVM IR.
+Sidewinder is a statically-typed Pythonic language that transpiles to C++20
+using [Mamba](https://github.com/antonsynd/mamba) as the standard library
+of builtin symbols.
 
 ## Dependencies
 
