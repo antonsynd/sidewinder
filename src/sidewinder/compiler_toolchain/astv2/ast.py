@@ -359,3 +359,29 @@ class NamedExpr(Expression):
 
         self.target: Name
         self.value: Expression
+
+
+class Subscript(AST):
+    def __init__(self):
+        super().__init__()
+
+        self.value: AST
+        self.slice: slice
+        self.ctx: Union[Load, Store, Del]
+
+
+class Slice(AST):
+    def __init__(self):
+        super().__init__()
+
+        self.lower: int
+        self.upper: int
+        self.step: int
+
+
+class ListComp(AST):
+    def __init__(self):
+        super().__init__()
+
+        self.elt: AST
+        self.generators
