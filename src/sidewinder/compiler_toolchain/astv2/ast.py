@@ -1,35 +1,56 @@
-from typing import MutableSequence, Union
+from typing import MutableSequence, Type, Union, Tuple, Dict, AbstractSet, Optional
+from enum import Enum, auto
+
+
+class Source:
+    def __init__(
+        self, lineno: int = -1, col_offset: int = -1, end_lineno: int = -1, end_col_offset: int = -1
+    ):
+        self.lineno: int = lineno
+        self.col_offset: int = col_offset
+        self.end_lineno: int = end_lineno
+        self.end_col_offset: int = end_col_offset
 
 
 class AST:
-    pass
-
-
-class Statement(AST):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, source: Source):
+        self.source: Source = source
 
 
 class Module(AST):
-    def __init__(self):
+    def __init__(self, body: MutableSequence[AST] = list()):
         super().__init__()
 
-        self.body: MutableSequence[Statement] = []
+        self.body: MutableSequence[AST] = body
 
 
 class FunctionType(AST):
-    def __init__(self):
+    def __init__(self, returns: AST, argtypes: MutableSequence[AST] = list()):
         super().__init__()
 
-        self.argtypes: MutableSequence[Expression] = []
-        self.returns: Expression
+        self.argtypes: MutableSequence[AST] = argtypes
+        self.returns: AST = returns
+
+
+class ConstantType(Enum):
+    BIG_INT = "bigint"
+    BYTE = "byte"
+    BYTES = "bytes"
+    COMPLEX = "complex"
+    DOUBLE = "double"
+    ELLIPSIS = "Ellipsis"
+    FLOAT = "float"
+    INT = "int"
+    NONE = "None"
+    STR = "str"
 
 
 class Constant(AST):
-    def __init__(self):
+    def __init__(self, value: str, kind: ConstantType):
         super().__init__()
 
-        self.value: str
+        self.value: str = value
+        self.kind: ConstantType = kind
 
 
 class FormattedValue(AST):
@@ -40,9 +61,9 @@ class FormattedValue(AST):
     def __init__(self):
         super().__init__()
 
-        self.value: Expression
+        self.value: AST
         self.conversion: int
-        self.format_spec: JoinedStr
+        self.format_spec: AST
 
 
 class JoinedStr(AST):
@@ -85,7 +106,7 @@ class Dict(AST):
     def __init__(self):
         super().__init__()
 
-        # Unpacking puts the expression into values and None at keys
+        # Unpacking puts the AST into values and None at keys
         self.keys: MutableSequence[AST] = []
         self.values: MutableSequence[AST] = []
 
@@ -121,23 +142,18 @@ class Starred(AST):
         self.ctx: Store
 
 
-class Expression(AST):
-    def __init__(self):
-        super().__init__()
-
-
-class Expr(Expression):
+class Expr(AST):
     def __init__(self):
         super().__init__()
         self.value: Union[Constant, Name, Lambda, Yield, YieldFrom]
 
 
-class UnaryOp(Expression):
+class UnaryOp(AST):
     def __init__(self):
         super().__init__()
 
         self.op: Union[UAdd, USub, Not, Invert]
-        self.operand: Expression
+        self.operand: AST
 
 
 class UAdd(AST):
@@ -164,11 +180,11 @@ class BinOp(AST):
     def __init__(self):
         super().__init__()
 
-        self.left: Expression
+        self.left: AST
         self.op = Union[
             Add, Sub, Mult, Div, FloorDiv, Mod, Pow, LShift, RShift, BitOr, BitXor, BitAnd, MatMult
         ]
-        self.right: Expression
+        self.right: AST
 
 
 class Add(AST):
@@ -236,12 +252,12 @@ class MatMult(AST):
         super().__init__()
 
 
-class BoolOp(Expression):
+class BoolOp(AST):
     def __init__(self):
         super().__init__()
 
         self.op: Union[Or, And]
-        self.values: MutableSequence[Expression]
+        self.values: MutableSequence[AST]
 
 
 class Or(AST):
@@ -254,13 +270,13 @@ class And(AST):
         super().__init__()
 
 
-class Compare(Expression):
+class Compare(AST):
     def __init__(self):
         super().__init__()
 
-        self.left: Expression
+        self.left: AST
         self.ops: MutableSequence[Union[Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn]] = []
-        self.comparators: MutableSequence[Expression]
+        self.comparators: MutableSequence[AST]
 
 
 class Eq(AST):
@@ -313,12 +329,12 @@ class NotIn(AST):
         super().__init__()
 
 
-class Call(Expression):
+class Call(AST):
     def __init__(self):
         super().__init__()
 
         self.func: Union[Name, Attribute]
-        self.args: MutableSequence[Expression] = []
+        self.args: MutableSequence[AST] = []
         self.keywords: MutableSequence[keyword] = []
 
 
@@ -327,19 +343,19 @@ class keyword(AST):
         super().__init__()
 
         self.arg: str
-        self.value: Expression
+        self.value: AST
 
 
-class IfExp(Expression):
+class IfExp(AST):
     def __init__(self):
         super().__init__()
 
-        self.test: Expression
-        self.body: Expression
-        self.orelse: Expression
+        self.test: AST
+        self.body: AST
+        self.orelse: AST
 
 
-class Attribute(Expression):
+class Attribute(AST):
     def __init__(self):
         super().__init__()
 
@@ -348,7 +364,7 @@ class Attribute(Expression):
         self.ctx: Union[Load, Store, Del]
 
 
-class NamedExpr(Expression):
+class NamedExpr(AST):
     """
     if (n := "str"):
         print(n)
@@ -358,7 +374,7 @@ class NamedExpr(Expression):
         super().__init__()
 
         self.target: Name
-        self.value: Expression
+        self.value: AST
 
 
 class Subscript(AST):
@@ -379,9 +395,318 @@ class Slice(AST):
         self.step: int
 
 
-class ListComp(AST):
+class Comprehension:
+    def __init__(self, target: AST, iter: AST, ifs: MutableSequence[AST], is_async: bool):
+        self.target: AST = target
+        self.iter: AST = iter
+        self.ifs: MutableSequence[AST] = ifs
+        self.is_async: bool = is_async
+
+
+class CompBase(AST):
+    def __init__(self, elt: AST, generators: MutableSequence[Comprehension]):
+        super().__init__()
+
+        self.elt: AST = elt
+        self.generators: MutableSequence[Comprehension] = generators
+
+
+class ListComp(CompBase):
+    def __init__(self, elt: AST, generators: MutableSequence[Comprehension]):
+        super().__init__(elt, generators)
+
+
+class SetComp(CompBase):
+    def __init__(self, elt: AST, generators: MutableSequence[Comprehension]):
+        super().__init__(elt, generators)
+
+
+class GeneratorExp(CompBase):
+    def __init__(self, elt: AST, generators: MutableSequence[Comprehension]):
+        super().__init__(elt, generators)
+
+
+class DictComp(AST):
+    def __init__(self, key: AST, value: AST, generators: MutableSequence[Comprehension]):
+        super().__init__()
+
+        self.key: AST = key
+        self.value: AST = value
+        self.generators: MutableSequence[Comprehension] = generators
+
+
+Assignable = Union[Name, Tuple, List]
+
+
+class Assign(AST):
+    # a = b = 1
+    # (a, b) = (2, 3)
+    # e = (a, b) = [c, d] = (4, 5)
+    def __init__(self, targets: MutableSequence[Assignable], value: AST):
+        super().__init__()
+
+        self.targets: MutableSequence[Assignable] = targets
+        self.value: AST = value
+
+
+class AnnAssign(AST):
+    # Annotated assignment
+    def __init__(self, target: AST, annotation: AST, value: Optional[AST], simple: bool):
+        super().__init__()
+
+        self.target: AST = target
+        self.annotation: AST = annotation
+        self.value: Optional[AST] = value
+        self.simple: bool = simple
+
+
+class Operator(Enum):
+    PLUS = "+"
+    MINUS = "-"
+
+
+class AugAssign(AST):
+    def __init__(self, target: AST, op: Operator, value: AST):
+        super().__init__()
+
+        self.target: AST = target
+        self.op: Operator = op
+        self.value: AST = value
+
+
+class Raise(AST):
+    # raise x
+    # raise x from y
+    def __init__(self, exc: Optional[AST], cause: Optional[AST]):
+        super().__init__()
+
+        self.exc: Optional[AST] = exc
+        self.cause: Optional[AST] = cause
+
+
+class Assert(AST):
+    # assert x, "message"
+    def __init__(self, test: AST, msg: Optional[AST]):
+        super().__init__()
+
+        self.test: AST = test
+        self.msg: Optional[AST] = msg
+
+
+class Delete(AST):
+    # del x, y, z
+    def __init__(self, targets: MutableSequence[AST]):
+        super().__init__()
+
+        self.targets: MutableSequence[AST] = targets
+
+
+class Pass(AST):
+    # pass
     def __init__(self):
         super().__init__()
 
-        self.elt: AST
-        self.generators
+
+class TypeAlias(AST):
+    def __init__(self, name, type_params, value):
+        super().__init__()
+
+
+class Import(AST):
+    def __init__(self, names):
+        super().__init__()
+
+
+class ImportFrom(AST):
+    def __init__(self, module, names, level):
+        super().__init__()
+
+
+class alias(AST):
+    def __init__(self, name, asname):
+        super().__init__()
+
+
+class If(AST):
+    def __init__(self, test, body, orelse):
+        super().__init__()
+
+
+class For(AST):
+    def __init__(self, target, iter, body, orelse, type_comment):
+        super().__init__()
+
+
+class While(AST):
+    def __init__(self, test, body, orelse):
+        super().__init__()
+
+
+class Break(AST):
+    def __init__(self):
+        super().__init__()
+
+
+class Continue(AST):
+    def __init__(self):
+        super().__init__()
+
+
+class Try(AST):
+    def __init__(self, body, handlers, orelse, finalbody):
+        super().__init__()
+
+
+class TryStar(AST):
+    def __init__(self, body, handlers, orelse, finalbody):
+        super().__init__()
+
+
+class ExceptHandler(AST):
+    def __init__(self, type, name, body):
+        super().__init__()
+
+
+class With(AST):
+    def __init__(self, items, body, type_comment):
+        super().__init__()
+
+
+class withitem(AST):
+    def __init__(self, context_expr, optional_vars):
+        super().__init__()
+
+
+class Match(AST):
+    def __init__(self, subject, cases):
+        super().__init__()
+
+
+class match_case(AST):
+    def __init__(self, pattern, guard, body):
+        super().__init__()
+
+
+class MatchValue(AST):
+    def __init__(self, value):
+        super().__init__()
+
+
+class MatchSingleton(AST):
+    def __init__(self, value):
+        super().__init__()
+
+
+class MatchSequence(AST):
+    def __init__(self, patterns):
+        super().__init__()
+
+
+class MatchStar(AST):
+    def __init__(self, name):
+        super().__init__()
+
+
+class MatchMapping(AST):
+    def __init__(self, keys, patterns, rest):
+        super().__init__()
+
+
+class MatchClass(AST):
+    def __init__(self, cls, patterns, kwd_attrs, kwd_patterns):
+        super().__init__()
+
+
+class MatchAs(AST):
+    def __init__(self, pattern, name):
+        super().__init__()
+
+
+class MatchOr(AST):
+    def __init__(self, patterns):
+        super().__init__()
+
+
+class TypeVar(AST):
+    def __init__(self, name, bound, default_value):
+        super().__init__()
+
+
+class ParamSpec(AST):
+    def __init__(self, name, default_value):
+        super().__init__()
+
+
+class TypeVarTuple(AST):
+    def __init__(self, name, default_value):
+        super().__init__()
+
+
+class FunctionDef(AST):
+    def __init__(self, name, args, body, decorator_list, returns, type_comment, type_params):
+        super().__init__()
+
+
+class Lambda(AST):
+    def __init__(self, args, body):
+        super().__init__()
+
+
+class arguments(AST):
+    def __init__(self, posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
+        super().__init__()
+
+
+class arg(AST):
+    def __init__(self, arg, annotation, type_comment):
+        super().__init__()
+
+
+class Return(AST):
+    def __init__(self, value):
+        super().__init__()
+
+
+class Yield(AST):
+    def __init__(self, value):
+        super().__init__()
+
+
+class YieldFrom(AST):
+    def __init__(self, value):
+        super().__init__()
+
+
+class Global(AST):
+    def __init__(self, names):
+        super().__init__()
+
+
+class Nonlocal(AST):
+    def __init__(self, names):
+        super().__init__()
+
+
+class ClassDef(AST):
+    def __init__(self, name, bases, keywords, body, decorator_list, type_params):
+        super().__init__()
+
+
+class AsyncFunctionDef(AST):
+    def __init__(self, name, args, body, decorator_list, returns, type_comment, type_params):
+        super().__init__()
+
+
+class Await(AST):
+    def __init__(self, value):
+        super().__init__()
+
+
+class AsyncFor(AST):
+    def __init__(self, target, iter, body, orelse, type_comment):
+        super().__init__()
+
+
+class AsyncWith(AST):
+    def __init__(self, items, body, type_comment):
+        super().__init__()
