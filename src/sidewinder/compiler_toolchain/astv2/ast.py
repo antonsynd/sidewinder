@@ -3,6 +3,10 @@ from enum import Enum, auto
 
 
 class Source:
+    """
+    Container for the source of a particular AST node.
+    """
+
     def __init__(
         self, lineno: int = -1, col_offset: int = -1, end_lineno: int = -1, end_col_offset: int = -1
     ):
@@ -13,11 +17,19 @@ class Source:
 
 
 class AST:
+    """
+    Base class for all AST nodes.
+    """
+
     def __init__(self, source: Source):
         self.source: Source = source
 
 
 class Module(AST):
+    """
+    Contains the code for a module (a file).
+    """
+
     def __init__(self, body: MutableSequence[AST] = list()):
         super().__init__()
 
@@ -508,38 +520,66 @@ class Pass(AST):
 
 
 class TypeAlias(AST):
-    def __init__(self, name, type_params, value):
+    def __init__(self, name: AST, type_params: MutableSequence[AST], value: AST):
         super().__init__()
+
+        self.name: AST
+        self.type_params: MutableSequence[AST] = type_params
+        self.value: AST = value
+
+
+class Alias(AST):
+    def __init__(self, name: str, asname: Optional[str]):
+        super().__init__()
+
+        self.name: str = name
+        self.asname: Optional[str] = asname
 
 
 class Import(AST):
-    def __init__(self, names):
+    def __init__(self, names: MutableSequence[Alias]):
         super().__init__()
+
+        self.names: MutableSequence[Alias] = names
 
 
 class ImportFrom(AST):
-    def __init__(self, module, names, level):
+    def __init__(self, module: Optional[str], names: MutableSequence[Alias], level: Optional[int]):
         super().__init__()
 
-
-class alias(AST):
-    def __init__(self, name, asname):
-        super().__init__()
+        self.module: Optional[str] = module
+        self.names: MutableSequence[Alias] = names
+        self.level: Optional[int] = level
 
 
 class If(AST):
-    def __init__(self, test, body, orelse):
+    def __init__(self, test: AST, body: AST, orelse: MutableSequence[AST]):
         super().__init__()
+
+        self.test: AST = test
+        self.body: AST = body
+        self.orelse: MutableSequence[AST] = orelse
 
 
 class For(AST):
-    def __init__(self, target, iter, body, orelse, type_comment):
+    def __init__(
+        self, target: AST, iter: AST, body: MutableSequence[AST], orelse: MutableSequence[AST]
+    ):
         super().__init__()
+
+        self.target: AST = target
+        self.iter: AST = iter
+        self.body: MutableSequence[AST] = body
+        self.orelse: MutableSequence[AST] = orelse
 
 
 class While(AST):
-    def __init__(self, test, body, orelse):
+    def __init__(self, test: AST, body: AST, orelse: MutableSequence[AST]):
         super().__init__()
+
+        self.test: AST = test
+        self.body: AST = body
+        self.orelse: MutableSequence[AST] = orelse
 
 
 class Break(AST):
