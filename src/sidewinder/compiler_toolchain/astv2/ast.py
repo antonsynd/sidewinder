@@ -58,6 +58,10 @@ class ConstantType(Enum):
 
 
 class Constant(AST):
+    """
+    Any literal.
+    """
+
     def __init__(self, value: str, kind: ConstantType):
         super().__init__()
 
@@ -68,6 +72,8 @@ class Constant(AST):
 class FormattedValue(AST):
     """
     Single formatting field in an f-string
+
+    {:0f}
     """
 
     def __init__(self):
@@ -80,7 +86,9 @@ class FormattedValue(AST):
 
 class JoinedStr(AST):
     """
-    An f-string
+    An f-string.
+
+    f"foobar"
     """
 
     def __init__(self):
@@ -90,6 +98,13 @@ class JoinedStr(AST):
 
 
 class List(AST):
+    """
+    A list literal.
+
+    [a, b] = [1, 3]  # store (assignment target)
+    a = [1, 3]       # load
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -99,6 +114,13 @@ class List(AST):
 
 
 class Tuple(AST):
+    """
+    A tuple literal.
+
+    (a, b) = [1, 3]  # store (assignment target)
+    a = (1, 3)       # load
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -108,6 +130,10 @@ class Tuple(AST):
 
 
 class Set(AST):
+    """
+    A set literal.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -115,43 +141,77 @@ class Set(AST):
 
 
 class Dict(AST):
+    """
+    A dict literal.
+    """
+
     def __init__(self):
         super().__init__()
 
         # Unpacking puts the AST into values and None at keys
+        # {"a": 5, *other}
+        # keys = {"a", None}
+        # values = {5, values of other}
         self.keys: MutableSequence[AST] = []
         self.values: MutableSequence[AST] = []
 
 
+class Context(AST):
+    def __init__(self):
+        super().__init__()
+
+
 class Name(AST):
+    """
+    Any identifier.
+    """
+
     def __init__(self):
         super().__init__()
 
         self.id: str
-        self.ctx: Union[Load, Store, Del]
+        self.ctx: Context
 
 
-class Load(AST):
+class Load(Context):
+    """
+    Context where a name is loaded (accessed).
+
+    ... = name
+    """
+
     def __init__(self):
         super().__init__()
 
 
-class Store(AST):
+class Store(Context):
+    """
+    Context where a name is the target for storing a value (setting).
+
+    name = ...
+    """
+
     def __init__(self):
         super().__init__()
 
 
-class Del(AST):
+class Del(Context):
+    """
+    Context where a name is the target for deletion.
+
+    del name
+    """
+
     def __init__(self):
         super().__init__()
 
 
 class Starred(AST):
-    def __init__(self):
+    def __init__(self, value: Name):
         super().__init__()
 
         self.value: Name
-        self.ctx: Store
+        self.ctx: Context = Store()
 
 
 class Expr(AST):
@@ -592,59 +652,115 @@ class Continue(AST):
         super().__init__()
 
 
-class Try(AST):
-    def __init__(self, body, handlers, orelse, finalbody):
-        super().__init__()
-
-
-class TryStar(AST):
-    def __init__(self, body, handlers, orelse, finalbody):
-        super().__init__()
-
-
 class ExceptHandler(AST):
-    def __init__(self, type, name, body):
+    """
+    type: None if there's no exception type provided
+
+    except type as name:
+        body
+    """
+
+    def __init__(self, type: Optional[Name], name: Optional[str], body: MutableSequence[AST]):
         super().__init__()
 
+        self.type: Optional[Name] = type
+        self.name: Optional[str] = name
+        self.body: MutableSequence[AST] = body
 
-class With(AST):
-    def __init__(self, items, body, type_comment):
+
+class Try(AST):
+    def __init__(
+        self,
+        body: MutableSequence[AST],
+        handlers: MutableSequence[ExceptHandler],
+        orelse: MutableSequence[AST],
+        finalbody: MutableSequence[AST],
+    ):
         super().__init__()
+
+        self.body: MutableSequence[AST] = body
+        self.handlers: MutableSequence[ExceptHandler] = handlers
+        self.orelse: MutableSequence[AST] = orelse
+        self.finalbody: MutableSequence[AST] = finalbody
+
+
+class TryStar(Try):
+    def __init__(
+        self,
+        body: MutableSequence[AST],
+        handlers: MutableSequence[ExceptHandler],
+        orelse: MutableSequence[AST],
+        finalbody: MutableSequence[AST],
+    ):
+        super().__init__(body=body, handlers=handlers, orelse=orelse, finalbody=finalbody)
 
 
 class withitem(AST):
-    def __init__(self, context_expr, optional_vars):
+    def __init__(
+        self,
+        context_expr: Union[AST, Name, Call],
+        optional_vars: Optional[Union[Name, Tuple, List]],
+    ):
         super().__init__()
 
+        self.context_expr: Union[AST, Name, Call] = context_expr
+        self.optional_vars: Optional[Union[Name, Tuple, List]] = optional_vars
 
-class Match(AST):
-    def __init__(self, subject, cases):
+
+class With(AST):
+    def __init__(self, items: MutableSequence[withitem], body: MutableSequence[AST]):
         super().__init__()
+
+        self.items: MutableSequence[withitem] = items
+        self.body: MutableSequence[AST] = body
 
 
 class match_case(AST):
-    def __init__(self, pattern, guard, body):
+    def __init__(self, pattern: AST, guard: Optional[AST], body: MutableSequence[AST]):
         super().__init__()
+
+        self.pattern: AST = pattern
+        self.guard: Optional[AST] = guard
+        self.body: MutableSequence[AST] = body
+
+
+class Match(AST):
+    def __init__(self, subject: AST, cases: MutableSequence[match_case]):
+        super().__init__()
+
+        self.subject: AST = subject
+        self.cases: MutableSequence[match_case] = cases
 
 
 class MatchValue(AST):
-    def __init__(self, value):
+    def __init__(self, value: Constant):
         super().__init__()
+
+        self.value: Constant = value
 
 
 class MatchSingleton(AST):
-    def __init__(self, value):
+    def __init__(self, value: Constant):
         super().__init__()
+
+        # according to the docs, this should only
+        # be True, False, or None. Use MatchValue
+        # otherwise.
+        self.value: Constant = value
 
 
 class MatchSequence(AST):
-    def __init__(self, patterns):
+    def __init__(self, patterns: MutableSequence[MatchValue]):
         super().__init__()
+
+        self.patterns: MutableSequence[MatchValue] = patterns
 
 
 class MatchStar(AST):
-    def __init__(self, name):
+    def __init__(self, name: Optional[str]):
         super().__init__()
+
+        self.name: Optional[str] = name
 
 
 class MatchMapping(AST):
