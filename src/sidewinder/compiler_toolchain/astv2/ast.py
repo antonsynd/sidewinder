@@ -740,6 +740,14 @@ class MatchValue(AST):
 
 
 class MatchSingleton(AST):
+    """
+    match x:
+        case None:
+            pass
+
+    value = None
+    """
+
     def __init__(self, value: Constant):
         super().__init__()
 
@@ -750,6 +758,14 @@ class MatchSingleton(AST):
 
 
 class MatchSequence(AST):
+    """
+    match x:
+        case [1, 2]:
+            pass
+
+    patterns = [1, 2]
+    """
+
     def __init__(self, patterns: MutableSequence[MatchValue]):
         super().__init__()
 
@@ -757,6 +773,16 @@ class MatchSequence(AST):
 
 
 class MatchStar(AST):
+    """
+    match x:
+        case [1, 2, *rest]:
+            pass
+        case [*_]:
+            pass
+
+    name = rest or None
+    """
+
     def __init__(self, name: Optional[str]):
         super().__init__()
 
@@ -764,48 +790,125 @@ class MatchStar(AST):
 
 
 class MatchMapping(AST):
-    def __init__(self, keys, patterns, rest):
+    """
+    match x:
+        case {1: _, 2: _}:
+            pass
+        case {**rest}:
+            pass
+
+    keys = [1, 2], patterns = [MatchAs(), MatchAs()]
+    rest = rest
+    """
+
+    def __init__(
+        self, keys: MutableSequence[AST], patterns: MutableSequence[AST], rest: Optional[Name]
+    ):
         super().__init__()
+
+        self.keys: MutableSequence[AST] = keys
+        self.patterns: MutableSequence[AST] = patterns
+        self.rest: Optional[Name] = rest
 
 
 class MatchClass(AST):
-    def __init__(self, cls, patterns, kwd_attrs, kwd_patterns):
+    """
+    match x:
+        case Point2D(0, 0)
+            pass
+        case Point3D(x=0, y=0, z=0)
+            pass
+    """
+
+    def __init__(
+        self,
+        cls: AST,
+        patterns: MutableSequence[AST],
+        kwd_attrs: MutableSequence[str],
+        kwd_patterns: MutableSequence[MatchValue],
+    ):
         super().__init__()
+
+        self.cls: AST = cls
+        self.patterns: MutableSequence[AST] = patterns
+        self.kwd_attrs: MutableSequence[str] = kwd_attrs
+        self.kwd_patters: MutableSequence[MatchValue] = kwd_patterns
 
 
 class MatchAs(AST):
-    def __init__(self, pattern, name):
+    """
+    match x:
+        case [x] as y:
+            pass
+        case _
+            pass
+
+    pattern = MatchSequence(x), name = y
+    pattern = None, name = None
+    """
+
+    def __init__(self, pattern: Optional[AST], name: Optional[str]):
         super().__init__()
+
+        self.pattern: Optional[AST] = pattern
+        self.name: Optional[str] = name
 
 
 class MatchOr(AST):
-    def __init__(self, patterns):
+    """
+    match x:
+        case [x] | (y):
+            pass
+    """
+
+    def __init__(self, patterns: MutableSequence[AST]):
         super().__init__()
+
+        self.patterns: MutableSequence[AST] = patterns
 
 
 class TypeVar(AST):
-    def __init__(self, name, bound, default_value):
+    """
+    type Alias[T: int = bool] = List[T]
+
+    name = Alias, bound = int, default_value = bool
+
+    bound = T must be a subtype
+    default_value = T is this if not specified
+    """
+
+    def __init__(
+        self, name: str, bound: Optional[Union[Tuple, Name]], default_value: Optional[Name]
+    ):
         super().__init__()
+
+        self.name: str = name
+        self.bound: Optional[Union[Tuple, Name]] = bound
+        self.default_value: Optional[Name] = default_value
 
 
 class ParamSpec(AST):
-    def __init__(self, name, default_value):
+    """
+    type Alias[**P = [int, str]] = Callable[P, int]
+    """
+
+    def __init__(self, name: str, default_value: Optional[AST]):
         super().__init__()
+
+        self.name: str = name
+        self.default_value: Optional[AST] = default_value
 
 
 class TypeVarTuple(AST):
-    def __init__(self, name, default_value):
+    """
+    type Alias[*Ts = ()] = tuple[*Ts]
+    """
+
+    def __init__(self, name: str, default_value: Optional[AST]):
         super().__init__()
 
-
-class FunctionDef(AST):
-    def __init__(self, name, args, body, decorator_list, returns, type_comment, type_params):
-        super().__init__()
-
-
-class Lambda(AST):
-    def __init__(self, args, body):
-        super().__init__()
+        self.name: str = name
+        self.default_value: Optional[AST] = default_value
 
 
 class arguments(AST):
@@ -818,51 +921,131 @@ class arg(AST):
         super().__init__()
 
 
-class Return(AST):
-    def __init__(self, value):
+class FunctionDef(AST):
+    def __init__(
+        self,
+        name: str,
+        args: arguments,
+        body: MutableSequence[AST],
+        decorator_list: MutableSequence[AST],
+        returns: AST,
+        type_params: MutableSequence[AST],
+    ):
         super().__init__()
+
+        self.name: str = name
+        self.args: arguments = args
+        self.body: MutableSequence[AST] = body
+        self.decorator_list: MutableSequence[AST] = decorator_list
+        self.returns: AST = returns
+        self.type_params: MutableSequence[AST] = type_params
+
+
+class Lambda(AST):
+    def __init__(self, args: arguments, body: MutableSequence[AST]):
+        super().__init__()
+
+        self.args: arguments = args
+        self.body: MutableSequence[AST] = body
+
+
+class Return(AST):
+    def __init__(self, value: Optional[AST]):
+        super().__init__()
+
+        self.value: Optional[AST] = value
 
 
 class Yield(AST):
-    def __init__(self, value):
+    def __init__(self, value: AST):
         super().__init__()
+
+        self.value: AST = value
 
 
 class YieldFrom(AST):
-    def __init__(self, value):
+    def __init__(self, value: AST):
         super().__init__()
+
+        self.value: AST = value
 
 
 class Global(AST):
-    def __init__(self, names):
+    def __init__(self, names: MutableSequence[str]):
         super().__init__()
+
+        self.names: MutableSequence[str] = names
 
 
 class Nonlocal(AST):
-    def __init__(self, names):
+    def __init__(self, names: MutableSequence[str]):
         super().__init__()
+
+        self.names: MutableSequence[str] = names
 
 
 class ClassDef(AST):
-    def __init__(self, name, bases, keywords, body, decorator_list, type_params):
+    def __init__(
+        self,
+        name: str,
+        bases: MutableSequence[Name],
+        keywords: MutableSequence[keyword],
+        body: MutableSequence[AST],
+        decorator_list: MutableSequence[AST],
+        type_params: MutableSequence[AST],
+    ):
         super().__init__()
+
+        self.name: str = name
+        self.bases: MutableSequence[Name] = bases
+        self.keywords: MutableSequence[keyword] = keywords
+        self.body: MutableSequence[AST] = body
+        self.decorator_list: MutableSequence[AST] = decorator_list
+        self.type_params: MutableSequence[AST] = type_params
 
 
 class AsyncFunctionDef(AST):
-    def __init__(self, name, args, body, decorator_list, returns, type_comment, type_params):
+    def __init__(
+        self,
+        name: str,
+        args: arguments,
+        body: MutableSequence[AST],
+        decorator_list: MutableSequence[AST],
+        returns: AST,
+        type_params: MutableSequence[AST],
+    ):
         super().__init__()
+
+        self.name: str = name
+        self.args: arguments = args
+        self.body: MutableSequence[AST] = body
+        self.decorator_list: MutableSequence[AST] = decorator_list
+        self.returns: AST = returns
+        self.type_params: MutableSequence[AST] = type_params
 
 
 class Await(AST):
-    def __init__(self, value):
+    def __init__(self, value: AST):
         super().__init__()
+
+        self.value: AST = value
 
 
 class AsyncFor(AST):
-    def __init__(self, target, iter, body, orelse, type_comment):
+    def __init__(
+        self, target: AST, iter: AST, body: MutableSequence[AST], orelse: MutableSequence[AST]
+    ):
         super().__init__()
+
+        self.target: AST = target
+        self.iter: AST = iter
+        self.body: MutableSequence[AST] = body
+        self.orelse: MutableSequence[AST] = orelse
 
 
 class AsyncWith(AST):
-    def __init__(self, items, body, type_comment):
+    def __init__(self, items: MutableSequence[withitem], body: MutableSequence[AST]):
         super().__init__()
+
+        self.items: MutableSequence[withitem] = items
+        self.body: MutableSequence[AST] = body
