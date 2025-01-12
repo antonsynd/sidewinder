@@ -41,13 +41,20 @@ class AST:
     def __init__(self, source: Optional[Source] = None):
         self.source: Optional[Source] = source
 
+    def _name(self) -> str:
+        return "AST"
+
+    def _properties(self) -> Sequence[str]:
+        return []
+
     def __repr__(self) -> str:
         buffer = StringIO()
-        buffer.write("AST(")
+        buffer.write(f"{self._name()}(")
 
-        properties: Sequence[str] = [f"source = {self.source}"]
+        props: MutableSequence[str] = [f"source = {self.source}"]
+        props.extend(self._properties())
 
-        buffer.write(", ".join(properties))
+        buffer.write(", ".join(props))
         buffer.write(")")
 
         return buffer.getvalue()
@@ -63,19 +70,14 @@ class Module(AST):
 
         self.body: MutableSequence[AST] = body
 
-    def __repr__(self) -> str:
-        buffer = StringIO()
-        buffer.write("Module(")
+    def _name(self) -> str:
+        return "Module"
 
-        properties: Sequence[str] = [
+    def _properties(self) -> Sequence[str]:
+        return [
             f"source = {self.source}",
             f"body = {self.body}",
         ]
-
-        buffer.write(", ".join(properties))
-        buffer.write(")")
-
-        return buffer.getvalue()
 
 
 class FunctionType(AST):
@@ -152,12 +154,28 @@ class FormattedValue(AST):
     {:0f}
     """
 
-    def __init__(self):
+    def __init__(self, value: AST, conversion: int, format_spec: AST):
         super().__init__()
 
-        self.value: AST
-        self.conversion: int
-        self.format_spec: AST
+        self.value: AST = value
+        self.conversion: int = conversion
+        self.format_spec: AST = format_spec
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("FormattedValue(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"value = {self.value}",
+            f"conversion = {self.conversion}",
+            f"format_spec = {self.format_spec}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class JoinedStr(AST):
@@ -167,10 +185,24 @@ class JoinedStr(AST):
     f"foobar"
     """
 
-    def __init__(self):
+    def __init__(self, values: MutableSequence[AST]):
         super().__init__()
 
-        self.values: MutableSequence[Union[FormattedValue, Constant]]
+        self.values: MutableSequence[Union[FormattedValue, Constant]] = values
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("JoinedStr(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"values = {self.values}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class List(AST):
@@ -181,12 +213,27 @@ class List(AST):
     a = [1, 3]       # load
     """
 
-    def __init__(self):
+    def __init__(self, elts: MutableSequence[AST], ctx: AST):
         super().__init__()
 
-        self.elts: MutableSequence[AST] = []
+        self.elts: MutableSequence[AST] = elts
         # Store if assignment target, else Load
-        self.ctx: Union[Store, Load]
+        self.ctx: Union[Store, Load] = ctx
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("List(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"elts = {self.elts}",
+            f"ctx = {self.ctx}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Tuple(AST):
@@ -197,12 +244,27 @@ class Tuple(AST):
     a = (1, 3)       # load
     """
 
-    def __init__(self):
+    def __init__(self, elts: MutableSequence[AST], ctx: AST):
         super().__init__()
 
-        self.elts: MutableSequence[AST] = []
+        self.elts: MutableSequence[AST] = elts
         # Store if assignment target, else Load
-        self.ctx: Union[Store, Load]
+        self.ctx: Union[Store, Load] = ctx
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Tuple(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"elts = {self.elts}",
+            f"ctx = {self.ctx}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Set(AST):
@@ -210,10 +272,24 @@ class Set(AST):
     A set literal.
     """
 
-    def __init__(self):
+    def __init__(self, elts: MutableSequence[AST]):
         super().__init__()
 
-        self.elts: MutableSequence[AST] = []
+        self.elts: MutableSequence[AST] = elts
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Set(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"elts = {self.elts}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Dict(AST):
@@ -221,20 +297,48 @@ class Dict(AST):
     A dict literal.
     """
 
-    def __init__(self):
+    def __init__(self, keys: MutableSequence[AST], values: MutableSequence[AST]):
         super().__init__()
 
         # Unpacking puts the AST into values and None at keys
         # {"a": 5, *other}
         # keys = {"a", None}
         # values = {5, values of other}
-        self.keys: MutableSequence[AST] = []
-        self.values: MutableSequence[AST] = []
+        self.keys: MutableSequence[AST] = keys
+        self.values: MutableSequence[AST] = values
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Dict(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"keys = {self.keys}",
+            f"values = {self.values}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Context(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Context(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Name(AST):
@@ -242,11 +346,26 @@ class Name(AST):
     Any identifier.
     """
 
-    def __init__(self):
+    def __init__(self, id: str, ctx: Context):
         super().__init__()
 
-        self.id: str
-        self.ctx: Context
+        self.id: str = id
+        self.ctx: Context = ctx
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Name(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"id = {self.id}",
+            f"ctx = {self.ctx}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Load(Context):
@@ -259,6 +378,19 @@ class Load(Context):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Load(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class Store(Context):
     """
@@ -269,6 +401,19 @@ class Store(Context):
 
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Store(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Del(Context):
@@ -281,51 +426,161 @@ class Del(Context):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Del(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class Starred(AST):
-    def __init__(self, value: Name):
+    def __init__(self, value: Name, ctx: Context):
+        # TODO: ctx = Store() by default?
         super().__init__()
 
-        self.value: Name
-        self.ctx: Context = Store()
+        self.value: Name = value
+        self.ctx: Context = ctx
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Starred(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"value = {self.value}",
+            f"ctx = {self.ctx}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Expr(AST):
-    def __init__(self):
+    def __init__(self, value: AST):
         super().__init__()
-        self.value: Union[Constant, Name, Lambda, Yield, YieldFrom]
+        self.value: Union[Constant, Name, Lambda, Yield, YieldFrom] = value
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Expr(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"value = {self.value}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class UnaryOp(AST):
-    def __init__(self):
+    def __init__(self, op: AST, operand: AST):
         super().__init__()
 
-        self.op: Union[UAdd, USub, Not, Invert]
-        self.operand: AST
+        self.op: Union[UAdd, USub, Not, Invert] = op
+        self.operand: AST = operand
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("UnaryOp(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"op = {self.op}",
+            f"operand = {self.operand}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class UAdd(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("UAdd(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class USub(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("USub(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Not(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Not(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class Invert(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Invert(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class BinOp(AST):
-    def __init__(self):
+    def __init__(self, left: AST, op: AST, right: AST):
         super().__init__()
 
         self.left: AST
@@ -334,182 +589,609 @@ class BinOp(AST):
         ]
         self.right: AST
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("BinOp(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"left = {self.left}",
+            f"op = {self.op}",
+            f"right = {self.right}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class Add(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Add(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Sub(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Sub(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class Mult(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Mult(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Div(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Div(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class FloorDiv(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("FloorDiv(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Mod(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Mod(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class Pow(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Pow(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class LShift(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("LShift(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class RShift(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("RShift(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class BitOr(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("BitOr(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class BitXor(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("BitXor(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class BitAnd(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("BitAnd(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class MatMult(AST):
+    """
+    Matrix multiplication
+    """
+
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("MatMult(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class BoolOp(AST):
-    def __init__(self):
+    def __init__(self, op: AST, values: MutableSequence[AST]):
         super().__init__()
 
-        self.op: Union[Or, And]
-        self.values: MutableSequence[AST]
+        self.op: Union[Or, And] = op
+        self.values: MutableSequence[AST] = values
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("BoolOp(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"op = {self.op}",
+            f"values = {self.values}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Or(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Or(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class And(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("And(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class Compare(AST):
-    def __init__(self):
+    def __init__(self, left: AST, ops: MutableSequence[AST], comparators: MutableSequence[AST]):
         super().__init__()
 
-        self.left: AST
-        self.ops: MutableSequence[Union[Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn]] = []
-        self.comparators: MutableSequence[AST]
+        self.left: AST = left
+        self.ops: MutableSequence[Union[Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn]] = ops
+        self.comparators: MutableSequence[AST] = comparators
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Compare(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"left = {self.left}",
+            f"ops = {self.ops}",
+            f"comparators = {self.comparators}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Eq(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Eq(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class NotEq(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("NotEq(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Lt(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Lt(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class LtE(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("LtE(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Gt(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Gt(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class GtE(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("GtE(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Is(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Is(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class IsNot(AST):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("IsNot(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class In(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("In(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class NotIn(AST):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("NotIn(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
+
+class Keyword(AST):
+    def __init__(self, arg: str, value: AST):
+        super().__init__()
+
+        self.arg: str = arg
+        self.value: AST = value
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Keyword(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"arg = {self.arg}",
+            f"value = {self.value}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class Call(AST):
-    def __init__(self):
+    def __init__(self, func: AST, args: MutableSequence[AST], keywords: MutableSequence[Keyword]):
         super().__init__()
 
-        self.func: Union[Name, Attribute]
-        self.args: MutableSequence[AST] = []
-        self.keywords: MutableSequence[keyword] = []
+        self.func: Union[Name, Attribute] = func
+        self.args: MutableSequence[AST] = args
+        self.keywords: MutableSequence[Keyword] = keywords
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Call(")
 
-class keyword(AST):
-    def __init__(self):
-        super().__init__()
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"func = {self.func}",
+            f"args = {self.args}",
+            f"keywords = {self.keywords}",
+        ]
 
-        self.arg: str
-        self.value: AST
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class IfExp(AST):
-    def __init__(self):
+    def __init__(self, test: AST, body: AST, orelse: AST):
         super().__init__()
 
         self.test: AST
         self.body: AST
         self.orelse: AST
 
+    def _name(self) -> str:
+        return "IfExp"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"test = {self.test}",
+            f"body = {self.body}",
+            f"orelse = {self.orelse}",
+        ]
+
 
 class Attribute(AST):
-    def __init__(self):
+    def __init__(self, value: Name, attr: str, ctx: AST):
         super().__init__()
 
-        self.value: Name
-        self.attr: str
-        self.ctx: Union[Load, Store, Del]
+        self.value: Name = value
+        self.attr: str = attr
+        self.ctx: Union[Load, Store, Del] = ctx
+
+    def _name(self) -> str:
+        return "Attribute"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"value = {self.value}",
+            f"attr = {self.attr}",
+            f"ctx = {self.ctx}",
+        ]
 
 
 class NamedExpr(AST):
@@ -518,37 +1200,77 @@ class NamedExpr(AST):
         print(n)
     """
 
-    def __init__(self):
+    def __init__(self, target: Name, value: AST):
         super().__init__()
 
-        self.target: Name
-        self.value: AST
+        self.target: Name = target
+        self.value: AST = value
 
+    def _name(self) -> str:
+        return "NamedExpr"
 
-class Subscript(AST):
-    def __init__(self):
-        super().__init__()
-
-        self.value: AST
-        self.slice: slice
-        self.ctx: Union[Load, Store, Del]
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"target = {self.target}",
+            f"value = {self.value}",
+        ]
 
 
 class Slice(AST):
-    def __init__(self):
+    def __init__(self, lower: Optional[int], upper: Optional[int], step: Optional[int]):
         super().__init__()
 
-        self.lower: int
-        self.upper: int
-        self.step: int
+        self.lower: Optional[int] = lower
+        self.upper: Optional[int] = upper
+        self.step: Optional[int] = step
+
+    def _name(self) -> str:
+        return "Slice"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"lower = {self.lower}",
+            f"upper = {self.upper}",
+            f"step = {self.step}",
+        ]
 
 
-class Comprehension:
+class Subscript(AST):
+    def __init__(self, value: AST, slice: Slice, ctx: AST):
+        super().__init__()
+
+        self.value: AST = value
+        self.slice: Slice = slice
+        self.ctx: Union[Load, Store, Del] = ctx
+
+    def _name(self) -> str:
+        return "Subscript"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"value = {self.value}",
+            f"slice = {self.slice}",
+            f"ctx = {self.ctx}",
+        ]
+
+
+class Comprehension(AST):
     def __init__(self, target: AST, iter: AST, ifs: MutableSequence[AST], is_async: bool):
         self.target: AST = target
         self.iter: AST = iter
         self.ifs: MutableSequence[AST] = ifs
         self.is_async: bool = is_async
+
+    def _name(self) -> str:
+        return "Comprehension"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"target = {self.target}",
+            f"iter = {self.iter}",
+            f"ifs = {self.ifs}",
+            f"is_async = {self.is_async}",
+        ]
 
 
 class CompBase(AST):
@@ -558,20 +1280,38 @@ class CompBase(AST):
         self.elt: AST = elt
         self.generators: MutableSequence[Comprehension] = generators
 
+    def _name(self) -> str:
+        return "CompBase"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"elt = {self.elt}",
+            f"generators = {self.generators}",
+        ]
+
 
 class ListComp(CompBase):
     def __init__(self, elt: AST, generators: MutableSequence[Comprehension]):
         super().__init__(elt, generators)
+
+    def _name(self) -> str:
+        return "ListComp"
 
 
 class SetComp(CompBase):
     def __init__(self, elt: AST, generators: MutableSequence[Comprehension]):
         super().__init__(elt, generators)
 
+    def _name(self) -> str:
+        return "SetComp"
+
 
 class GeneratorExp(CompBase):
     def __init__(self, elt: AST, generators: MutableSequence[Comprehension]):
         super().__init__(elt, generators)
+
+    def _name(self) -> str:
+        return "GeneratorExp"
 
 
 class DictComp(AST):
@@ -582,8 +1322,18 @@ class DictComp(AST):
         self.value: AST = value
         self.generators: MutableSequence[Comprehension] = generators
 
+    def _name(self) -> str:
+        return "DictComp"
 
-Assignable = Union[Name, Tuple, List]
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"key = {self.key}",
+            f"value = {self.value}",
+            f"generators = {self.generators}",
+        ]
+
+
+type Assignable = Union[Name, Tuple, List]
 
 
 class Assign(AST):
@@ -596,6 +1346,15 @@ class Assign(AST):
         self.targets: MutableSequence[Assignable] = targets
         self.value: AST = value
 
+    def _name(self) -> str:
+        return "Assign"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"targets = {self.targets}",
+            f"value = {self.value}",
+        ]
+
 
 class AnnAssign(AST):
     # Annotated assignment
@@ -606,6 +1365,17 @@ class AnnAssign(AST):
         self.annotation: AST = annotation
         self.value: Optional[AST] = value
         self.simple: bool = simple
+
+    def _name(self) -> str:
+        return "AnnAssign"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"target = {self.target}",
+            f"annotation = {self.annotation}",
+            f"value = {self.value}",
+            f"simple = {self.simple}",
+        ]
 
 
 class Operator(Enum):
@@ -620,6 +1390,16 @@ class AugAssign(AST):
         self.target: AST = target
         self.op: Operator = op
         self.value: AST = value
+
+    def _name(self) -> str:
+        return "AugAssign"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"target = {self.target}",
+            f"op = {self.op}",
+            f"value = {self.value}",
+        ]
 
 
 class Raise(AST):
