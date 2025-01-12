@@ -1,5 +1,6 @@
-from typing import MutableSequence, Type, Union, Tuple, Dict, AbstractSet, Optional
+from typing import MutableSequence, Type, Union, Tuple, Dict, AbstractSet, Optional, Sequence
 from enum import Enum, auto
+from io import StringIO
 
 
 class Source:
@@ -15,14 +16,41 @@ class Source:
         self.end_lineno: int = end_lineno
         self.end_col_offset: int = end_col_offset
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Source(")
+
+        properties: Sequence[str] = [
+            f"lineno = {self.lineno}"
+            f"col_offset = {self.col_offset}"
+            f"end_lineno = {self.end_lineno}"
+            f"end_col_offset = {self.end_col_offset}"
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class AST:
     """
     Base class for all AST nodes.
     """
 
-    def __init__(self, source: Source):
-        self.source: Source = source
+    def __init__(self, source: Optional[Source] = None):
+        self.source: Optional[Source] = source
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("AST(")
+
+        properties: Sequence[str] = [f"source = {self.source}"]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class Module(AST):
@@ -30,18 +58,51 @@ class Module(AST):
     Contains the code for a module (a file).
     """
 
-    def __init__(self, body: MutableSequence[AST] = list()):
+    def __init__(self, body: MutableSequence[AST]):
         super().__init__()
 
         self.body: MutableSequence[AST] = body
 
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Module(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"body = {self.body}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
+
 
 class FunctionType(AST):
-    def __init__(self, returns: AST, argtypes: MutableSequence[AST] = list()):
+    """
+    TODO: should be function signature to include the argument names.
+    """
+
+    def __init__(self, argtypes: MutableSequence[AST], returns: Optional[AST] = None):
         super().__init__()
 
         self.argtypes: MutableSequence[AST] = argtypes
-        self.returns: AST = returns
+        self.returns: Optional[AST] = returns
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("FunctionType(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"argtypes = {self.argtypes}",
+            f"returns = {self.returns}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class ConstantType(Enum):
@@ -50,7 +111,7 @@ class ConstantType(Enum):
     BYTES = "bytes"
     COMPLEX = "complex"
     DOUBLE = "double"
-    ELLIPSIS = "Ellipsis"
+    ELLIPSIS = "Ellipsis"  # Maybe ... ?
     FLOAT = "float"
     INT = "int"
     NONE = "None"
@@ -67,6 +128,21 @@ class Constant(AST):
 
         self.value: str = value
         self.kind: ConstantType = kind
+
+    def __repr__(self) -> str:
+        buffer = StringIO()
+        buffer.write("Constant(")
+
+        properties: Sequence[str] = [
+            f"source = {self.source}",
+            f"value = {self.value}",
+            f"kind = {self.kind}",
+        ]
+
+        buffer.write(", ".join(properties))
+        buffer.write(")")
+
+        return buffer.getvalue()
 
 
 class FormattedValue(AST):
