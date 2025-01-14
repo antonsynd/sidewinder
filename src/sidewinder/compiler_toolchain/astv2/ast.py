@@ -1058,54 +1058,24 @@ class IsNot(AST):
     def __init__(self):
         super().__init__()
 
-    def __repr__(self) -> str:
-        buffer = StringIO()
-        buffer.write("IsNot(")
-
-        properties: Sequence[str] = [
-            f"source = {self.source}",
-        ]
-
-        buffer.write(", ".join(properties))
-        buffer.write(")")
-
-        return buffer.getvalue()
+    def _name(self) -> str:
+        return "IsNot"
 
 
 class In(AST):
     def __init__(self):
         super().__init__()
 
-    def __repr__(self) -> str:
-        buffer = StringIO()
-        buffer.write("In(")
-
-        properties: Sequence[str] = [
-            f"source = {self.source}",
-        ]
-
-        buffer.write(", ".join(properties))
-        buffer.write(")")
-
-        return buffer.getvalue()
+    def _name(self) -> str:
+        return "In"
 
 
 class NotIn(AST):
     def __init__(self):
         super().__init__()
 
-    def __repr__(self) -> str:
-        buffer = StringIO()
-        buffer.write("NotIn(")
-
-        properties: Sequence[str] = [
-            f"source = {self.source}",
-        ]
-
-        buffer.write(", ".join(properties))
-        buffer.write(")")
-
-        return buffer.getvalue()
+    def _name(self) -> str:
+        return "NotIn"
 
 
 class Keyword(AST):
@@ -1115,20 +1085,15 @@ class Keyword(AST):
         self.arg: str = arg
         self.value: AST = value
 
-    def __repr__(self) -> str:
-        buffer = StringIO()
-        buffer.write("Keyword(")
+    def _name(self) -> str:
+        return "Keyword"
 
-        properties: Sequence[str] = [
+    def _properties(self) -> Sequence[str]:
+        return [
             f"source = {self.source}",
             f"arg = {self.arg}",
             f"value = {self.value}",
         ]
-
-        buffer.write(", ".join(properties))
-        buffer.write(")")
-
-        return buffer.getvalue()
 
 
 class Call(AST):
@@ -1139,21 +1104,16 @@ class Call(AST):
         self.args: MutableSequence[AST] = args
         self.keywords: MutableSequence[Keyword] = keywords
 
-    def __repr__(self) -> str:
-        buffer = StringIO()
-        buffer.write("Call(")
+    def _name(self) -> str:
+        return "Call"
 
-        properties: Sequence[str] = [
+    def _properties(self) -> Sequence[str]:
+        return [
             f"source = {self.source}",
             f"func = {self.func}",
             f"args = {self.args}",
             f"keywords = {self.keywords}",
         ]
-
-        buffer.write(", ".join(properties))
-        buffer.write(")")
-
-        return buffer.getvalue()
 
 
 class IfExp(AST):
@@ -1411,6 +1371,15 @@ class Raise(AST):
         self.exc: Optional[AST] = exc
         self.cause: Optional[AST] = cause
 
+    def _name(self) -> str:
+        return "Raise"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"exc = {self.exc}",
+            f"cause = {self.cause}",
+        ]
+
 
 class Assert(AST):
     # assert x, "message"
@@ -1420,6 +1389,15 @@ class Assert(AST):
         self.test: AST = test
         self.msg: Optional[AST] = msg
 
+    def _name(self) -> str:
+        return "Assert"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"test = {self.test}",
+            f"msg = {self.msg}",
+        ]
+
 
 class Delete(AST):
     # del x, y, z
@@ -1428,20 +1406,41 @@ class Delete(AST):
 
         self.targets: MutableSequence[AST] = targets
 
+    def _name(self) -> str:
+        return "Delete"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"targets = {self.targets}",
+        ]
+
 
 class Pass(AST):
     # pass
     def __init__(self):
         super().__init__()
 
+    def _name(self) -> str:
+        return "Pass"
+
 
 class TypeAlias(AST):
     def __init__(self, name: AST, type_params: MutableSequence[AST], value: AST):
         super().__init__()
 
-        self.name: AST
+        self.name: AST = name
         self.type_params: MutableSequence[AST] = type_params
         self.value: AST = value
+
+    def _name(self) -> str:
+        return "TypeAlias"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"name = {self.name}",
+            f"type_params = {self.type_params}",
+            f"value = {self.value}",
+        ]
 
 
 class Alias(AST):
@@ -1451,12 +1450,29 @@ class Alias(AST):
         self.name: str = name
         self.asname: Optional[str] = asname
 
+    def _name(self) -> str:
+        return "AugAssign"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"name = {self.name}",
+            f"asname = {self.asname}",
+        ]
+
 
 class Import(AST):
     def __init__(self, names: MutableSequence[Alias]):
         super().__init__()
 
         self.names: MutableSequence[Alias] = names
+
+    def _name(self) -> str:
+        return "Import"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"names = {self.names}",
+        ]
 
 
 class ImportFrom(AST):
@@ -1467,6 +1483,16 @@ class ImportFrom(AST):
         self.names: MutableSequence[Alias] = names
         self.level: Optional[int] = level
 
+    def _name(self) -> str:
+        return "ImportFrom"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"module = {self.module}",
+            f"names = {self.names}",
+            f"level = {self.level}",
+        ]
+
 
 class If(AST):
     def __init__(self, test: AST, body: AST, orelse: MutableSequence[AST]):
@@ -1475,6 +1501,16 @@ class If(AST):
         self.test: AST = test
         self.body: AST = body
         self.orelse: MutableSequence[AST] = orelse
+
+    def _name(self) -> str:
+        return "If"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"test = {self.test}",
+            f"body = {self.body}",
+            f"orelse = {self.orelse}",
+        ]
 
 
 class For(AST):
@@ -1488,6 +1524,17 @@ class For(AST):
         self.body: MutableSequence[AST] = body
         self.orelse: MutableSequence[AST] = orelse
 
+    def _name(self) -> str:
+        return "For"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"target = {self.target}",
+            f"iter = {self.iter}",
+            f"body = {self.body}",
+            f"orelse = {self.orelse}",
+        ]
+
 
 class While(AST):
     def __init__(self, test: AST, body: AST, orelse: MutableSequence[AST]):
@@ -1497,15 +1544,31 @@ class While(AST):
         self.body: AST = body
         self.orelse: MutableSequence[AST] = orelse
 
+    def _name(self) -> str:
+        return "While"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"test = {self.test}",
+            f"body = {self.body}",
+            f"orelse = {self.orelse}",
+        ]
+
 
 class Break(AST):
     def __init__(self):
         super().__init__()
 
+    def _name(self) -> str:
+        return "Break"
+
 
 class Continue(AST):
     def __init__(self):
         super().__init__()
+
+    def _name(self) -> str:
+        return "Continue"
 
 
 class ExceptHandler(AST):
@@ -1523,6 +1586,16 @@ class ExceptHandler(AST):
         self.name: Optional[str] = name
         self.body: MutableSequence[AST] = body
 
+    def _name(self) -> str:
+        return "ExceptHandler"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"type = {self.type}",
+            f"name = {self.name}",
+            f"body = {self.body}",
+        ]
+
 
 class Try(AST):
     def __init__(
@@ -1539,6 +1612,17 @@ class Try(AST):
         self.orelse: MutableSequence[AST] = orelse
         self.finalbody: MutableSequence[AST] = finalbody
 
+    def _name(self) -> str:
+        return "Try"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"body = {self.body}",
+            f"handlers = {self.handlers}",
+            f"orelse = {self.orelse}",
+            f"finalbody = {self.finalbody}",
+        ]
+
 
 class TryStar(Try):
     def __init__(
@@ -1550,8 +1634,11 @@ class TryStar(Try):
     ):
         super().__init__(body=body, handlers=handlers, orelse=orelse, finalbody=finalbody)
 
+    def _name(self) -> str:
+        return "TryStar"
 
-class withitem(AST):
+
+class WithItem(AST):
     def __init__(
         self,
         context_expr: Union[AST, Name, Call],
@@ -1562,16 +1649,34 @@ class withitem(AST):
         self.context_expr: Union[AST, Name, Call] = context_expr
         self.optional_vars: Optional[Union[Name, Tuple, List]] = optional_vars
 
+    def _name(self) -> str:
+        return "WithItem"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"context_expr = {self.context_expr}",
+            f"optional_vars = {self.optional_vars}",
+        ]
+
 
 class With(AST):
-    def __init__(self, items: MutableSequence[withitem], body: MutableSequence[AST]):
+    def __init__(self, items: MutableSequence[WithItem], body: MutableSequence[AST]):
         super().__init__()
 
-        self.items: MutableSequence[withitem] = items
+        self.items: MutableSequence[WithItem] = items
         self.body: MutableSequence[AST] = body
 
+    def _name(self) -> str:
+        return "With"
 
-class match_case(AST):
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"items = {self.items}",
+            f"body = {self.body}",
+        ]
+
+
+class MatchCase(AST):
     def __init__(self, pattern: AST, guard: Optional[AST], body: MutableSequence[AST]):
         super().__init__()
 
@@ -1579,13 +1684,32 @@ class match_case(AST):
         self.guard: Optional[AST] = guard
         self.body: MutableSequence[AST] = body
 
+    def _name(self) -> str:
+        return "MatchCase"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"pattern = {self.pattern}",
+            f"guard = {self.guard}",
+            f"body = {self.body}",
+        ]
+
 
 class Match(AST):
-    def __init__(self, subject: AST, cases: MutableSequence[match_case]):
+    def __init__(self, subject: AST, cases: MutableSequence[MatchCase]):
         super().__init__()
 
         self.subject: AST = subject
-        self.cases: MutableSequence[match_case] = cases
+        self.cases: MutableSequence[MatchCase] = cases
+
+    def _name(self) -> str:
+        return "Match"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"subject = {self.subject}",
+            f"cases = {self.cases}",
+        ]
 
 
 class MatchValue(AST):
@@ -1593,6 +1717,14 @@ class MatchValue(AST):
         super().__init__()
 
         self.value: Constant = value
+
+    def _name(self) -> str:
+        return "MatchValue"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"value = {self.value}",
+        ]
 
 
 class MatchSingleton(AST):
@@ -1612,6 +1744,14 @@ class MatchSingleton(AST):
         # otherwise.
         self.value: Constant = value
 
+    def _name(self) -> str:
+        return "MatchSingleton"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"value = {self.value}",
+        ]
+
 
 class MatchSequence(AST):
     """
@@ -1626,6 +1766,14 @@ class MatchSequence(AST):
         super().__init__()
 
         self.patterns: MutableSequence[MatchValue] = patterns
+
+    def _name(self) -> str:
+        return "MatchSequence"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"patterns = {self.patterns}",
+        ]
 
 
 class MatchStar(AST):
@@ -1643,6 +1791,14 @@ class MatchStar(AST):
         super().__init__()
 
         self.name: Optional[str] = name
+
+    def _name(self) -> str:
+        return "MatchStar"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"name = {self.name}",
+        ]
 
 
 class MatchMapping(AST):
@@ -1666,6 +1822,16 @@ class MatchMapping(AST):
         self.patterns: MutableSequence[AST] = patterns
         self.rest: Optional[Name] = rest
 
+    def _name(self) -> str:
+        return "MatchMapping"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"keys = {self.keys}",
+            f"patterns = {self.patterns}",
+            f"rest = {self.rest}",
+        ]
+
 
 class MatchClass(AST):
     """
@@ -1688,7 +1854,18 @@ class MatchClass(AST):
         self.cls: AST = cls
         self.patterns: MutableSequence[AST] = patterns
         self.kwd_attrs: MutableSequence[str] = kwd_attrs
-        self.kwd_patters: MutableSequence[MatchValue] = kwd_patterns
+        self.kwd_patterns: MutableSequence[MatchValue] = kwd_patterns
+
+    def _name(self) -> str:
+        return "MatchClass"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"cls = {self.cls}",
+            f"patterns = {self.patterns}",
+            f"kwd_attrs = {self.kwd_attrs}",
+            f"kwd_patterns = {self.kwd_patterns}",
+        ]
 
 
 class MatchAs(AST):
@@ -1709,6 +1886,15 @@ class MatchAs(AST):
         self.pattern: Optional[AST] = pattern
         self.name: Optional[str] = name
 
+    def _name(self) -> str:
+        return "MatchAs"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"pattern = {self.pattern}",
+            f"name = {self.name}",
+        ]
+
 
 class MatchOr(AST):
     """
@@ -1721,6 +1907,14 @@ class MatchOr(AST):
         super().__init__()
 
         self.patterns: MutableSequence[AST] = patterns
+
+    def _name(self) -> str:
+        return "MatchOr"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"patterns = {self.patterns}",
+        ]
 
 
 class TypeVar(AST):
@@ -1742,6 +1936,16 @@ class TypeVar(AST):
         self.bound: Optional[Union[Tuple, Name]] = bound
         self.default_value: Optional[Name] = default_value
 
+    def _name(self) -> str:
+        return "TypeVar"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"name = {self.name}",
+            f"bound = {self.bound}",
+            f"default_value = {self.default_value}",
+        ]
+
 
 class ParamSpec(AST):
     """
@@ -1753,6 +1957,15 @@ class ParamSpec(AST):
 
         self.name: str = name
         self.default_value: Optional[AST] = default_value
+
+    def _name(self) -> str:
+        return "ParamSpec"
+
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"name = {self.name}",
+            f"default_value = {self.default_value}",
+        ]
 
 
 class TypeVarTuple(AST):
@@ -1766,13 +1979,22 @@ class TypeVarTuple(AST):
         self.name: str = name
         self.default_value: Optional[AST] = default_value
 
+    def _name(self) -> str:
+        return "TypeVarTuple"
 
-class arguments(AST):
+    def _properties(self) -> Sequence[str]:
+        return [
+            f"name = {self.name}",
+            f"default_value = {self.default_value}",
+        ]
+
+
+class Arguments(AST):
     def __init__(self, posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg, defaults):
         super().__init__()
 
 
-class arg(AST):
+class Arg(AST):
     def __init__(self, arg, annotation, type_comment):
         super().__init__()
 
@@ -1781,7 +2003,7 @@ class FunctionDef(AST):
     def __init__(
         self,
         name: str,
-        args: arguments,
+        args: Arguments,
         body: MutableSequence[AST],
         decorator_list: MutableSequence[AST],
         returns: AST,
@@ -1790,7 +2012,7 @@ class FunctionDef(AST):
         super().__init__()
 
         self.name: str = name
-        self.args: arguments = args
+        self.args: Arguments = args
         self.body: MutableSequence[AST] = body
         self.decorator_list: MutableSequence[AST] = decorator_list
         self.returns: AST = returns
@@ -1798,10 +2020,10 @@ class FunctionDef(AST):
 
 
 class Lambda(AST):
-    def __init__(self, args: arguments, body: MutableSequence[AST]):
+    def __init__(self, args: Arguments, body: MutableSequence[AST]):
         super().__init__()
 
-        self.args: arguments = args
+        self.args: Arguments = args
         self.body: MutableSequence[AST] = body
 
 
@@ -1845,7 +2067,7 @@ class ClassDef(AST):
         self,
         name: str,
         bases: MutableSequence[Name],
-        keywords: MutableSequence[keyword],
+        keywords: MutableSequence[Keyword],
         body: MutableSequence[AST],
         decorator_list: MutableSequence[AST],
         type_params: MutableSequence[AST],
@@ -1854,7 +2076,7 @@ class ClassDef(AST):
 
         self.name: str = name
         self.bases: MutableSequence[Name] = bases
-        self.keywords: MutableSequence[keyword] = keywords
+        self.keywords: MutableSequence[Keyword] = keywords
         self.body: MutableSequence[AST] = body
         self.decorator_list: MutableSequence[AST] = decorator_list
         self.type_params: MutableSequence[AST] = type_params
@@ -1864,7 +2086,7 @@ class AsyncFunctionDef(AST):
     def __init__(
         self,
         name: str,
-        args: arguments,
+        args: Arguments,
         body: MutableSequence[AST],
         decorator_list: MutableSequence[AST],
         returns: AST,
@@ -1873,7 +2095,7 @@ class AsyncFunctionDef(AST):
         super().__init__()
 
         self.name: str = name
-        self.args: arguments = args
+        self.args: Arguments = args
         self.body: MutableSequence[AST] = body
         self.decorator_list: MutableSequence[AST] = decorator_list
         self.returns: AST = returns
@@ -1900,8 +2122,8 @@ class AsyncFor(AST):
 
 
 class AsyncWith(AST):
-    def __init__(self, items: MutableSequence[withitem], body: MutableSequence[AST]):
+    def __init__(self, items: MutableSequence[WithItem], body: MutableSequence[AST]):
         super().__init__()
 
-        self.items: MutableSequence[withitem] = items
+        self.items: MutableSequence[WithItem] = items
         self.body: MutableSequence[AST] = body
