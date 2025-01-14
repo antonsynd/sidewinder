@@ -7,7 +7,7 @@ from PythonParser import PythonParser
 
 from sidewinder.compiler_toolchain.antlr.ast_builder import AntlrASTBuilder
 from sidewinder.compiler_toolchain.antlr.parser import AntlrParser
-from sidewinder.compiler_toolchain.ast import Node
+from sidewinder.compiler_toolchain.ast import AST
 from sidewinder.compiler_toolchain.parser import ParseTreeNode
 
 
@@ -22,9 +22,12 @@ def main() -> None:
     parse_tree: ParseTreeNode = parser.file_input()
     parse_tree = antlr_builder._postprocess_parse_tree(parse_tree=parse_tree)
     ast_builder = AntlrASTBuilder()
-    node: Node = ast_builder.generate_ast(parse_tree=parse_tree)
+    try:
+        node: AST = ast_builder.generate_ast(parse_tree=parse_tree)
 
-    print(f"Resulting AST: {node}")
+        print(f"Resulting AST: {node}")
+    except:
+        pass
 
 
 def parse_args() -> argparse.Namespace:

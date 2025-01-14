@@ -26,6 +26,8 @@ _expected_resources: Sequence[Path] = [
     PYTHON_RESOURCE_DIR / "PythonParser.g4",
     PYTHON_RESOURCE_DIR / "PythonLexerBase.py",
     PYTHON_RESOURCE_DIR / "PythonParserBase.py",
+    PYTHON_RESOURCE_DIR / "PythonParserListener.py",
+    PYTHON_RESOURCE_DIR / "PythonParserVisitor.py",
     PYTHON_RESOURCE_DIR / "transformGrammar.py",
 ]
 
@@ -105,6 +107,16 @@ def setup(args: argparse.Namespace, rest: Sequence[str]) -> None:
         get_logger().info("Generating parser...")
         subprocess.run(
             ["antlr", "-Dlanguage=Python3", str(PYTHON_RESOURCE_DIR / "PythonParser.g4")]
+        )
+
+        get_logger().info("Generating visitor...")
+        subprocess.run(
+            [
+                "antlr",
+                "-visitor",
+                "-Dlanguage=Python3",
+                str(PYTHON_RESOURCE_DIR / "PythonParser.g4"),
+            ]
         )
 
     except subprocess.CalledProcessError as e:
